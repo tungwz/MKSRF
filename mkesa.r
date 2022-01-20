@@ -1,7 +1,7 @@
 
 # ======================================================
 # make land surface input dataset from ESA CCI data
-# 
+#
 # History:
 #   2019/06: Hua Yuan, initial version
 # ======================================================
@@ -19,7 +19,7 @@ idx[1,]  = c(1, 2, 3, 4, NA)
 idx[2,]  = c(4, 5, 6, 7, 8)
 idx[3,]  = c(8,  9, 10,  11,  12)
 idx[4,]  = c(12, 13,  14,  15,  NA)
-idx[5,]  = c(16, 17,  18,  19,  NA) 
+idx[5,]  = c(16, 17,  18,  19,  NA)
 idx[6,]  = c(19, 20,  21,  22,  23)
 idx[7,]  = c(23, 24,  25,  26,  27)
 idx[8,]  = c(27, 28,  29,  30,  31)
@@ -117,7 +117,7 @@ regname=read.csv(file=REGFILE, header=F)
 
 # process the regions one by one
 for (ireg in 1:dim(reg)[1]) {
-  
+
   filename = paste(RAW_DIR, 'RG_', regname[ireg,1], ".RAW2005.nc", sep="")
   fraw     = nc_open(filename)
   filename = paste(CCI_DIR, 'RG_', regname[ireg,1], ".CCI2005.nc", sep="")
@@ -165,9 +165,9 @@ for (ireg in 1:dim(reg)[1]) {
   uadata[is.na(uadata)] = 0.
 
   cat("\n")
-  print(paste("Start to precess region: ", 
+  print(paste("Start to precess region: ",
           regname[ireg,1], sep=""))
-  
+
   # loop for each small 500m grid
   for (i in 1:xydim) {
     cat(i);cat(".")
@@ -221,7 +221,7 @@ for (ireg in 1:dim(reg)[1]) {
       # set land cover type
       lc = trunc(lc/10)
 
-      # set no-data to barren 
+      # set no-data to barren
       if (lc == 0) {lc = 20}
       lcdata[j,i] = lc
 
@@ -242,7 +242,7 @@ for (ireg in 1:dim(reg)[1]) {
 
       if (tbe+tbd+tne+tnd+sbe+sbd+sne+ng+mg+ua*0.2==0) {
         ppft[j,i,1] = 100.
-        next 
+        next
       }
 
       urban_ne = NA
@@ -251,8 +251,8 @@ for (ireg in 1:dim(reg)[1]) {
 
       #browser()
       # needleleaf evergreen, temperate
-      if (kg %in% c(tropical, temperate, boreal_warm)) { 
-        ppft[j,i,2] = tne 
+      if (kg %in% c(tropical, temperate, boreal_warm)) {
+        ppft[j,i,2] = tne
         urban_ne = 2
       }
 
@@ -335,7 +335,7 @@ for (ireg in 1:dim(reg)[1]) {
 
       if (!is.na(urban_ne)) {
         pctpft[urban_ne] = pctpft[urban_ne] + ua*0.025
-      } 
+      }
 
       if (!is.na(urban_bd)) {
         pctpft[urban_bd] = pctpft[urban_bd] + ua*0.025
@@ -355,7 +355,7 @@ for (ireg in 1:dim(reg)[1]) {
       laitot = c(1:12)
 
       for ( imonth in c(1:12) ) {
-        laitot[imonth] = 
+        laitot[imonth] =
         sum(lai[idx[imonth,]]*wgt[imonth,], na.rm=T)/
         sum(wgt[imonth,])
       }
@@ -390,7 +390,7 @@ for (ireg in 1:dim(reg)[1]) {
 
         # calculate gdd according to tmin, tmax, tavg, 2, 5degree
 
-        # calcualte day index of tavg 
+        # calcualte day index of tavg
         if (tmax[imonth]-tmin[imonth] > 0) {
           davg = (tmax[imonth]-tavg[imonth])/(tmax[imonth]-tmin[imonth])*dom[imonth]
         } else {
@@ -424,7 +424,7 @@ for (ireg in 1:dim(reg)[1]) {
           (tmax[imonth]+tavg[imonth]-10)/2.*(dom[imonth]-davg)
         } else if (5.>=tavg[imonth] && 5<tmax[imonth] && tmax[imonth]!=tavg[imonth]) {
           dd5[imonth] = (tmax[imonth]-5.)/2.*
-          (tmax[imonth]-5.)/(tmax[imonth]-tavg[imonth])*(dom[imonth]-davg) 
+          (tmax[imonth]-5.)/(tmax[imonth]-tavg[imonth])*(dom[imonth]-davg)
         } else {
           dd5[imonth] = max(0, (tavg[imonth]-5.)*dom[imonth])
         }
@@ -439,9 +439,9 @@ for (ireg in 1:dim(reg)[1]) {
         gdd2[itmin] = 0.
         rgdd2[itmin] = 0.
       } else {
-        nextmonth = itmin%%12 + 1 
+        nextmonth = itmin%%12 + 1
         prevmonth = (10+itmin)%%12 + 1
-        sum = max(0, (tmin[nextmonth]-2.)) + 
+        sum = max(0, (tmin[nextmonth]-2.)) +
         max(0, (tmin[prevmonth]-2.))
         if (sum > 0) {
           gdd2[itmin]  = dd2[itmin]*max(0, tmin[nextmonth]-2.)/sum
@@ -463,9 +463,9 @@ for (ireg in 1:dim(reg)[1]) {
         gdd5[itmin] = 0.
         rgdd5[itmin] = 0.
       } else {
-        nextmonth = itmin%%12 + 1 
+        nextmonth = itmin%%12 + 1
         prevmonth = (10+itmin)%%12 + 1
-        sum = max(0, (tmin[nextmonth]-5.)) + 
+        sum = max(0, (tmin[nextmonth]-5.)) +
         max(0, (tmin[prevmonth]-5.))
         if (sum > 0) {
           gdd5[itmin]  = dd5[itmin]*max(0, tmin[nextmonth]-5.)/sum
@@ -542,8 +542,8 @@ for (ireg in 1:dim(reg)[1]) {
       for (imonth in 1:12) {
         sumwgt = sum(phi[,imonth]*laimax*pctpft)
         if (sumwgt > 0.) {
-          laiini[,imonth] = 
-          phi[,imonth]*laimax/sumwgt*laitot[imonth] 
+          laiini[,imonth] =
+          phi[,imonth]*laimax/sumwgt*laitot[imonth]
         } else {
           laiini[,imonth] = 0.
         }
@@ -566,15 +566,15 @@ for (ireg in 1:dim(reg)[1]) {
 
         # calculate for non-evergreen PFT
         index  = c(1,2,4,5,9)+1
-        sumevg = 
+        sumevg =
         sum(laiini[index,imonth]*pctpft[index])
         laitot_nonevg = max(laitot[imonth]-sumevg, 0.)
 
         index  = c(3,6,7,8,10:15)+1
-        sumnon = 
+        sumnon =
         sum(phi[index,imonth]*laimax[index]*pctpft[index])
         if (sumnon > 0.) {
-          laiini[index,imonth] = phi[index,imonth] * 
+          laiini[index,imonth] = phi[index,imonth] *
           laimax[index] / sumnon * laitot_nonevg
         } else {
           sumnon =
@@ -639,12 +639,12 @@ for (ireg in 1:dim(reg)[1]) {
       ppft[j,i,]    = pctpft*sumpctpft
 
       if (abs(sumpctpft+pice[j,i]+pwater[j,i]-100) > 1e-3) {
-        print("Sum of area is not equle to 100%! STOP!") 
+        print("Sum of area is not equle to 100%! STOP!")
         browser()
       }
-      
+
       if (abs(pcrop[j,i]-ppft[j,i,16]) > 1e-3) {
-        print("Crop area is not conserved! STOP!") 
+        print("Crop area is not conserved! STOP!")
         browser()
       }
 
@@ -683,71 +683,71 @@ for (ireg in 1:dim(reg)[1]) {
   # land cover data
   fillvalue <- 255
   dlname <- "ESA CCI Land Cover Type data"
-  esa_cci<- ncvar_def("LC", "-", 
-      list(londim, latdim), 
+  esa_cci<- ncvar_def("LC", "-",
+      list(londim, latdim),
       fillvalue, dlname, prec="short", compression=6)
 
   fillvalue <- -999.
   dlname <- "Monthly landcover LAI values"
-  monthly_lc_lai <- ncvar_def("MONTHLY_LC_LAI", "m^2/m^2", 
-      list(londim, latdim, mondim), 
+  monthly_lc_lai <- ncvar_def("MONTHLY_LC_LAI", "m^2/m^2",
+      list(londim, latdim, mondim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Monthly landcover SAI values"
-  monthly_lc_sai <- ncvar_def("MONTHLY_LC_SAI", "m^2/m^2", 
-      list(londim, latdim, mondim), 
+  monthly_lc_sai <- ncvar_def("MONTHLY_LC_SAI", "m^2/m^2",
+      list(londim, latdim, mondim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Monthly PFT LAI values"
-  monthly_lai <- ncvar_def("MONTHLY_LAI", "m^2/m^2", 
-      list(londim, latdim, pftdim, mondim), 
+  monthly_lai <- ncvar_def("MONTHLY_LAI", "m^2/m^2",
+      list(londim, latdim, pftdim, mondim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Monthly PFT SAI values"
-  monthly_sai <- ncvar_def("MONTHLY_SAI", "m^2/m^2", 
-      list(londim, latdim, pftdim, mondim), 
+  monthly_sai <- ncvar_def("MONTHLY_SAI", "m^2/m^2",
+      list(londim, latdim, pftdim, mondim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Percent crop cover"
-  pct_crop <- ncvar_def("PCT_CROP", "%", 
-      list(londim, latdim), 
+  pct_crop <- ncvar_def("PCT_CROP", "%",
+      list(londim, latdim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Percent urban cover"
-  pct_urban <- ncvar_def("PCT_URBAN", "%", 
-      list(londim, latdim), 
+  pct_urban <- ncvar_def("PCT_URBAN", "%",
+      list(londim, latdim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Percent wetland cover"
-  pct_wetland <- ncvar_def("PCT_WETLAND", "%", 
-      list(londim, latdim), 
+  pct_wetland <- ncvar_def("PCT_WETLAND", "%",
+      list(londim, latdim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Percent glacier/ice cover"
-  pct_glacier <- ncvar_def("PCT_GLACIER", "%", 
-      list(londim, latdim), 
+  pct_glacier <- ncvar_def("PCT_GLACIER", "%",
+      list(londim, latdim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Percent water body cover"
-  pct_water <- ncvar_def("PCT_WATER", "%", 
-      list(londim, latdim), 
+  pct_water <- ncvar_def("PCT_WATER", "%",
+      list(londim, latdim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Percent ocean cover"
-  pct_ocean <- ncvar_def("PCT_OCEAN", "%", 
-      list(londim, latdim), 
+  pct_ocean <- ncvar_def("PCT_OCEAN", "%",
+      list(londim, latdim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Percent PFT cover"
-  pct_pft <- ncvar_def("PCT_PFT", "%", 
-      list(londim, latdim, pftdim), 
+  pct_pft <- ncvar_def("PCT_PFT", "%",
+      list(londim, latdim, pftdim),
       fillvalue, dlname, prec="float", compression=6)
 
   # tree height
   fillvalue <- 255
   dlname <- "Global forest canopy height"
-  htop <- ncvar_def("HTOP", "m", 
-      list(londim, latdim), 
+  htop <- ncvar_def("HTOP", "m",
+      list(londim, latdim),
       fillvalue, dlname, prec="short", compression=6)
 
   # create netCDF file
@@ -756,11 +756,11 @@ for (ireg in 1:dim(reg)[1]) {
   print(filename)
   cmd = paste("rm -f ", filename, sep="")
   system(cmd)
-  ncout <- nc_create(filename, 
+  ncout <- nc_create(filename,
       list(esa_cci, monthly_lc_lai, monthly_lc_sai,
           monthly_lai, monthly_sai, pct_crop, pct_urban,
-          pct_wetland, pct_glacier, pct_water, pct_ocean, 
-          pct_pft, htop), 
+          pct_wetland, pct_glacier, pct_water, pct_ocean,
+          pct_pft, htop),
           force_v4=TRUE, verbose=F)
 
   # put variables

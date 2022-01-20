@@ -12,7 +12,7 @@ for (i in 1:dim(reg)[1]) {
   slon = (reg[i,2]+180)*120+1
   slat = (90-reg[i,1])*120+1
   filename=paste("RG_", regname[i,1],'.B', sep="")
-  writeBin(c(mraw[slon:(slon+599),slat:(slat+599)]), filename, size=1) 
+  writeBin(c(mraw[slon:(slon+599),slat:(slat+599)]), filename, size=1)
 }
 
 # read binary data of needleleaf tree
@@ -24,7 +24,7 @@ for (i in 1:dim(reg)[1]) {
   slon = (reg[i,2]+180)*120+1
   slat = (90-reg[i,1])*120+1
   filename=paste("RG_", regname[i,1],'.N', sep="")
-  writeBin(c(mraw[slon:(slon+599),slat:(slat+599)]), filename, size=1) 
+  writeBin(c(mraw[slon:(slon+599),slat:(slat+599)]), filename, size=1)
 }
 
 # read binary data of evergreen leaf tree
@@ -36,7 +36,7 @@ for (i in 1:dim(reg)[1]) {
   slon = (reg[i,2]+180)*120+1
   slat = (90-reg[i,1])*120+1
   filename=paste("RG_", regname[i,1],'.E', sep="")
-  writeBin(c(mraw[slon:(slon+599),slat:(slat+599)]), filename, size=1) 
+  writeBin(c(mraw[slon:(slon+599),slat:(slat+599)]), filename, size=1)
 }
 
 # read binary data of deciduous leaf tree
@@ -48,5 +48,5 @@ for (i in 1:dim(reg)[1]) {
   slon = (reg[i,2]+180)*120+1
   slat = (90-reg[i,1])*120+1
   filename=paste("RG_", regname[i,1],'.D', sep="")
-  writeBin(c(mraw[slon:(slon+599),slat:(slat+599)]), filename, size=1) 
+  writeBin(c(mraw[slon:(slon+599),slat:(slat+599)]), filename, size=1)
 }

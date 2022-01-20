@@ -1,7 +1,7 @@
 
 # ======================================================
 # Make high-resolution land surface input dataset
-# 
+#
 # History:
 #   2019/06: Hua Yuan, initial version
 # ======================================================
@@ -16,11 +16,12 @@ idx = matrix(0, 12, 5)
 wgt = matrix(0, 12, 5)
 
 # index of 46 8-day's data
+# 8-day <--> month
 idx[1,]  = c(1, 2, 3, 4, NA)
 idx[2,]  = c(4, 5, 6, 7, 8)
 idx[3,]  = c(8,  9, 10,  11,  12)
 idx[4,]  = c(12, 13,  14,  15,  NA)
-idx[5,]  = c(16, 17,  18,  19,  NA) 
+idx[5,]  = c(16, 17,  18,  19,  NA)
 idx[6,]  = c(19, 20,  21,  22,  23)
 idx[7,]  = c(23, 24,  25,  26,  27)
 idx[8,]  = c(27, 28,  29,  30,  31)
@@ -46,7 +47,6 @@ wgt[12,] = c(2, 8, 8, 8, 5)
 # define resolution
 xydim = 1200
 
-days  = seq(1, 46, 1)
 mons  = seq(1, 12, 1)
 dom   = c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
@@ -55,12 +55,12 @@ pftnum = seq(0, 15, 1)
 pftname = c(
 "not_vegetated                           ", # 0
 "needleleaf_evergreen_temperate_tree     ", # 1
-"needleleaf_evergreen_boreal_tree        ", # 2 
+"needleleaf_evergreen_boreal_tree        ", # 2
 "needleleaf_deciduous_boreal_tree        ", # 3
 "broadleaf_evergreen_tropical_tree       ", # 4
 "broadleaf_evergreen_temperate_tree      ", # 5
-"broadleaf_deciduous_tropical_tree       ", # 6 
-"broadleaf_deciduous_temperate_tree      ", # 7 
+"broadleaf_deciduous_tropical_tree       ", # 6
+"broadleaf_deciduous_temperate_tree      ", # 7
 "broadleaf_deciduous_boreal_tree         ", # 8
 "broadleaf_evergreen_temperate_shrub     ", # 9
 "broadleaf_deciduous_temperate_shrub     ", # 10
@@ -79,6 +79,7 @@ minfr  = c(0, .7, .7, 0, .8, .8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 saimin = c(0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, .1)
 sairtn = c(0, .5, .5, .5, .5, .5, .5, .5, .5, .5, .5, .5, .5, .5, .5, 0.)
 
+# initialize
 phi    = array(1, c(length(pftnum), length(mons)))
 laiini = array(0, c(length(pftnum), length(mons)))
 phimin = rep(0.5, length(mons))
@@ -97,10 +98,10 @@ pocean   = array(0, c(xydim, xydim))
 ppft     = array(0, c(xydim, xydim, length(pftnum)))
 htop500  = array(0, c(xydim, xydim))
 
-ROOT_DIR  = "/home/yuanhua/hard/mksrf/"
-RAW_DIR   = paste(ROOT_DIR, "raw_5x5/", sep="")
-CCI_DIR   = paste(ROOT_DIR, "cci_5x5/", sep="")
-SRF_DIR   = paste(ROOT_DIR, "srf_5x5/", sep="")
+ROOT_DIR = "/home/yuanhua/hard/mksrf/"
+RAW_DIR  = paste(ROOT_DIR, "raw_5x5/", sep="")
+CCI_DIR  = paste(ROOT_DIR, "cci_5x5/", sep="")
+SRF_DIR  = paste(ROOT_DIR, "srf_5x5/", sep="")
 
 # get regions paras from input file
 reg=read.csv(file=REGFILE, sep='_', header=F)
@@ -108,7 +109,7 @@ regname=read.csv(file=REGFILE, header=F)
 
 # process the regions one by one
 for (ireg in 1:dim(reg)[1]) {
-  
+
   filename = paste(RAW_DIR, 'RG_', regname[ireg,1], ".RAW2005.nc", sep="")
   fraw     = nc_open(filename)
   filename = paste(CCI_DIR, 'RG_', regname[ireg,1], ".CCI2005.nc", sep="")
@@ -131,6 +132,7 @@ for (ireg in 1:dim(reg)[1]) {
   tmindata = ncvar_get(fraw, "TMIN")
   htopdata = ncvar_get(fraw, "HTOP")
 
+  # read cci data
   tbedata  = ncvar_get(fcci, "Tree_Broadleaf_Evergreen")
   tbddata  = ncvar_get(fcci, "Tree_Broadleaf_Deciduous")
   tnedata  = ncvar_get(fcci, "Tree_Needleleaf_Evergreen")
@@ -152,12 +154,12 @@ for (ireg in 1:dim(reg)[1]) {
   sbedata[is.na(sbedata)] = 0.
   sbddata[is.na(sbddata)] = 0.
   snedata[is.na(snedata)] = 0.
-  ngdata[is.na(ngdata)] = 0.
-  mgdata[is.na(mgdata)] = 0.
-  uadata[is.na(uadata)] = 0.
+  ngdata [is.na(ngdata )] = 0.
+  mgdata [is.na(mgdata )] = 0.
+  uadata [is.na(uadata )] = 0.
 
   cat("\n")
-  print(paste("Start to precess region: ", 
+  print(paste("Start to precess region: ",
           regname[ireg,1], sep=""))
 
   # loop for each small 500m grid
@@ -166,7 +168,7 @@ for (ireg in 1:dim(reg)[1]) {
     for (j in 1:xydim) {
       #for (i in 125:125) {
       #for (j in 30:30) {
-      
+
       # get data
       # ------------------------------
       lc   = lcdata[j, i]
@@ -196,9 +198,9 @@ for (ireg in 1:dim(reg)[1]) {
       sbe  = sbedata[j,i]*100
       sbd  = sbddata[j,i]*100
       sne  = snedata[j,i]*100
-      ng   = ngdata[j,i]*100
-      mg   = mgdata[j,i]*100
-      ua   = uadata[j,i]*100
+      ng   = ngdata [j,i]*100
+      mg   = mgdata [j,i]*100
+      ua   = uadata [j,i]*100
 
       # initialization
       lclai[j,i,]   = 0.
@@ -215,68 +217,71 @@ for (ireg in 1:dim(reg)[1]) {
 
       # ------------------------------------------------------------
       # set crop/urban/water/glacier/wetland(CoLM) pecent
-      # basic steps/rules: 
+      # basic steps/rules:
       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       # step 1: adjust due to water%, total soil reduced  -> (1-water%)
       #
       # step 2: adjust due to ice% (additonal), and crop%
       #   ice% from bare%
-      #   crop% from %grass
+      #   crop% from grass%
       #
       # step 3: adjust due to urban% and wetland%
       #   urban and wetland have the same vegeta comp as natrural ones
       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       #
-      # Further update: 
+      # Further update:
       # the values above need to be updated by higher revolution
-      # data. 
+      # data. 用更专业化的数据或更高分辨率的数据对水体、城市、湿地、冰川
+      # 和耕地进行更新。
+      # 注: 目前并没有以上更新，因此水体、城市、湿地和冰川根据 MODIS相应
+      # 的地表分类设置为100%。耕地则进行简单判断，与该格点草本覆盖率相关。
       # ------------------------------------------------------------
-      
+
 # yuan, 1/1/2020: do not calculate ocean points
       # not land, supposed to be ocean
-      if (kg == 0) {   
+      if (kg == 0) {
         lcdata[j,i] = 0
-        pocean[j,i] = 100. 
+        pocean[j,i] = 100.
         next
       }
 
 # yuan, 1/2/2020: set NA data to ocean
 # inconsistant with soil data
-# right now only process RG_25_150_25_155
+# right now only process RG_25_150_20_155
 # need to deal with other regions
 # !!!NOTE: 需要重新run这个程序，使与land cover type保持一致
       # set NA data to barren
-      if (is.na(lc)) {  
+      if (is.na(lc)) {
         #lc = 16
         #lcdata[j,i] = 16
         lcdata[j,i] = 0
-        pocean[j,i] = 100. 
+        pocean[j,i] = 100.
         next
       }
-      
+
 # yuan, 1/1/2020: move it to the first
       # not land, supposed to be ocean
-      #if (kg == 0) {   
+      #if (kg == 0) {
       #  lcdata[j,i] = 0
-      #  pocean[j,i] = 100. 
+      #  pocean[j,i] = 100.
       #  next
       #}
 
-      if (lc == 11) {           # wetland ==> all
+      if (lc == 11) {           # 100% wetland
         pwetland[j, i] = 100.
-      } else if (lc == 12) {    # crop ==> grass
+      } else if (lc == 12) {    # crop% < grass%
         pcrop[j, i] = 100.
-      } else if (lc == 13) {    # urban ==> all
+      } else if (lc == 13) {    # 100% urban
         purban[j, i] = 100.
-      } else if (lc == 14) {    # crop ==> grass
+      } else if (lc == 14) {    # crop% < grass%
         pcrop[j, i] = 50.
-      } else if (lc == 15) {    # ice ==> bare? yes
+      } else if (lc == 15) {    # 100% ice
         pice[j, i] = 100.
         next
-      } else if (lc == 17) {    # water ==> no
+      } else if (lc == 17) {    # 100% water
         pwater[j, i] = 100.
         next
-      } 
+      }
 
       # set vegetation fraction
       # ------------------------------
@@ -288,8 +293,7 @@ for (ireg in 1:dim(reg)[1]) {
       sum = pctt+pcth+pctb
       if (is.na(sum) || sum==0) {
         tree_cover = tbe + tbd + tne + tnd + ua*0.05
-        herb_cover = sbe + sbd + sne + ng + mg +
-                     ua*0.15
+        herb_cover = sbe + sbd + sne + ng + mg + ua*0.15
       } else {
         tree_cover = pctt/0.8
         herb_cover = pcth/0.8
@@ -313,12 +317,12 @@ for (ireg in 1:dim(reg)[1]) {
 
       # split tree
       if (tree_cover > 0.) {
-        
-        # tropical 
+
+        # tropical
         if (kg <=4 || kg==6) {
 
           # assumed no needleleaf tree here
-          bt = bt + nt                   
+          bt = bt + nt
           nt = 0.
 
           if (et+dt > 0) {
@@ -516,7 +520,7 @@ for (ireg in 1:dim(reg)[1]) {
         }
 
       } else {
-        ppft[j,i,c(9:15)+1] = 0. 
+        ppft[j,i,c(9:15)+1] = 0.
       }
 
       pctpft = ppft[j,i,]
@@ -529,7 +533,7 @@ for (ireg in 1:dim(reg)[1]) {
       laitot = c(1:12)
 
       for ( imonth in c(1:12) ) {
-        laitot[imonth] = 
+        laitot[imonth] =
         sum(lai[idx[imonth,]]*wgt[imonth,], na.rm=T)/
         sum(wgt[imonth,])
       }
@@ -547,8 +551,8 @@ for (ireg in 1:dim(reg)[1]) {
         dd5   = c(1:12)*0.
         gdd2  = c(1:12)*0.
         gdd5  = c(1:12)*0.
-        rgdd2  = c(1:12)*0.
-        rgdd5  = c(1:12)*0.
+        rgdd2 = c(1:12)*0.
+        rgdd5 = c(1:12)*0.
       }
 
       while ( mcnt < 12 ) {
@@ -558,7 +562,7 @@ for (ireg in 1:dim(reg)[1]) {
         # calculate gdd according to tmin, tmax, tavg, 2, 5degree
         # ------------------------------
 
-        # calcualte day index of tavg 
+        # calcualte day index of tavg
         if (tmax[imonth]-tmin[imonth] > 0) {
           davg = (tmax[imonth]-tavg[imonth])/(tmax[imonth]-tmin[imonth])*dom[imonth]
         } else {
@@ -566,22 +570,24 @@ for (ireg in 1:dim(reg)[1]) {
         }
 
         # gdd2 in different cases
-        if (2. < tmin[imonth]) {
+        if (2. < tmin[imonth]) { #月最低温都大于2.度
           dd2[imonth] = (tavg[imonth]-2.) * dom[imonth]
-        } else if (2. >= tmax[imonth]) {
+        } else if (2. >= tmax[imonth]) { #月最高温都小于2.度
           dd2[imonth] = 0.
         } else if (2.>=tmin[imonth] && 2.<tavg[imonth] && tavg[imonth]!=tmin[imonth]) {
+          #月最低温小于等于2.度，平均温大于2.度
           dd2[imonth] = (tavg[imonth]-2.)/2.*
           (tavg[imonth]-2.)/(tavg[imonth]-tmin[imonth])*davg +
           (tmax[imonth]+tavg[imonth]-4.)/2.*(dom[imonth]-davg)
-        } else if (2.>=tavg[imonth] && 2<tmax[imonth] && tmax[imonth]!=tavg[imonth]) {
+        } else if (2.>=tavg[imonth] && 2.<tmax[imonth] && tmax[imonth]!=tavg[imonth]) {
+          #月平均温小于等于2.度，最高温大于2.度
           dd2[imonth] = (tmax[imonth]-2.)/2.*
           (tmax[imonth]-2.)/(tmax[imonth]-tavg[imonth])*(dom[imonth]-davg)
-        } else {
+        } else { #似乎不可能发生
           dd2[imonth] = max(0, (tavg[imonth]-2.)*dom[imonth])
         }
 
-        # gdd5 in different cases
+        # gdd5 in different cases [同上面2.度积温计算]
         if (5. < tmin[imonth]) {
           dd5[imonth] = (tavg[imonth]-5.) * dom[imonth]
         } else if (5. >= tmax[imonth]) {
@@ -589,10 +595,10 @@ for (ireg in 1:dim(reg)[1]) {
         } else if (5.>=tmin[imonth] && 5.<tavg[imonth] && tavg[imonth]!=tmin[imonth]) {
           dd5[imonth] = (tavg[imonth]-5.)/2.*
           (tavg[imonth]-5.)/(tavg[imonth]-tmin[imonth])*davg +
-          (tmax[imonth]+tavg[imonth]-10)/2.*(dom[imonth]-davg)
-        } else if (5.>=tavg[imonth] && 5<tmax[imonth] && tmax[imonth]!=tavg[imonth]) {
+          (tmax[imonth]+tavg[imonth]-10.)/2.*(dom[imonth]-davg)
+        } else if (5.>=tavg[imonth] && 5.<tmax[imonth] && tmax[imonth]!=tavg[imonth]) {
           dd5[imonth] = (tmax[imonth]-5.)/2.*
-          (tmax[imonth]-5.)/(tmax[imonth]-tavg[imonth])*(dom[imonth]-davg) 
+          (tmax[imonth]-5.)/(tmax[imonth]-tavg[imonth])*(dom[imonth]-davg)
         } else {
           dd5[imonth] = max(0, (tavg[imonth]-5.)*dom[imonth])
         }
@@ -607,20 +613,20 @@ for (ireg in 1:dim(reg)[1]) {
         gdd2[itmin] = 0.
         rgdd2[itmin] = 0.
       } else {
-        nextmonth = itmin%%12 + 1 
+        nextmonth = itmin%%12 + 1
         prevmonth = (10+itmin)%%12 + 1
-        sum = max(0, (tmin[nextmonth]-2.)) + 
+        sum = max(0, (tmin[nextmonth]-2.)) +
         max(0, (tmin[prevmonth]-2.))
-        if (sum > 0) {
+        if (sum > 0) { #前后两个月最低温有大于2.度，按最低温度差值分配积温
           gdd2[itmin]  = dd2[itmin]*max(0, tmin[nextmonth]-2.)/sum
           rgdd2[itmin] = dd2[itmin]*max(0, tmin[prevmonth]-2.)/sum
-        } else {
+        } else { #都小于2.度，按平均温度差值分配积温
           if (tavg[nextmonth]+tavg[prevmonth]-2*tavg[itmin] > 0) {
             gdd2[itmin]  = dd2[itmin]*(tavg[nextmonth]-tavg[itmin])/
             (tavg[nextmonth]+tavg[prevmonth]-2*tavg[itmin])
             rgdd2[itmin] = dd2[itmin]*(tavg[prevmonth]-tavg[itmin])/
             (tavg[nextmonth]+tavg[prevmonth]-2*tavg[itmin])
-          } else {
+          } else { #前后两月更温度最低月完全一样，平均分积温(几乎不会发生)
             gdd2[itmin]  = dd2[itmin] * 0.5
             rgdd2[itmin] = dd2[itmin] * 0.5
           }
@@ -631,9 +637,9 @@ for (ireg in 1:dim(reg)[1]) {
         gdd5[itmin] = 0.
         rgdd5[itmin] = 0.
       } else {
-        nextmonth = itmin%%12 + 1 
+        nextmonth = itmin%%12 + 1
         prevmonth = (10+itmin)%%12 + 1
-        sum = max(0, (tmin[nextmonth]-5.)) + 
+        sum = max(0, (tmin[nextmonth]-5.)) +
         max(0, (tmin[prevmonth]-5.))
         if (sum > 0) {
           gdd5[itmin]  = dd5[itmin]*max(0, tmin[nextmonth]-5.)/sum
@@ -678,11 +684,13 @@ for (ireg in 1:dim(reg)[1]) {
       }
 
       #browser()
+      #最后设置平均温最小月自身的积温
       gdd2[itmin]  = dd2[itmin]
       rgdd2[itmin] = dd2[itmin]
       gdd5[itmin]  = dd5[itmin]
       rgdd5[itmin] = dd5[itmin]
 
+      #?
       gdd2 = pmin(gdd2, rgdd2)
       gdd5 = pmin(gdd5, rgdd5)
 
@@ -707,13 +715,13 @@ for (ireg in 1:dim(reg)[1]) {
       for (imonth in 1:12) {
         sumwgt = sum(phi[,imonth]*laimax*pctpft)
         if (sumwgt > 0.) {
-          laiini[,imonth] = phi[,imonth]*laimax/sumwgt*laitot[imonth] 
+          laiini[,imonth] = phi[,imonth]*laimax/sumwgt*laitot[imonth]
         } else {
           laiini[,imonth] = 0.
         }
       }
 
-      # adjust LAI 
+      # adjust LAI
       # ---------------------------
       #laiinimax = apply(laiini, 1, max) # check
       laimaxloc = which.max(laitot)
@@ -729,23 +737,24 @@ for (ireg in 1:dim(reg)[1]) {
         ind = which(laiini[,imonth] > laiinimax, arr.ind=T)
         laiini[ind,imonth] = laiinimax[ind]
 
-        # calculate for non-evergreen PFT
+        # 计算常绿树的LAI
         index  = c(1,2,4,5,9)+1
-        sumevg = 
+        sumevg =
         sum(laiini[index,imonth]*pctpft[index])
         laitot_nonevg = max(laitot[imonth]-sumevg, 0.)
 
+        # 计算non-evergreen PFT的LAI
         index  = c(3,6,7,8,10:15)+1
-        sumnon = 
+        sumnon =
         sum(phi[index,imonth]*laimax[index]*pctpft[index])
         if (sumnon > 0.) {
-          laiini[index,imonth] = phi[index,imonth] * 
+          laiini[index,imonth] = phi[index,imonth] *
           laimax[index] / sumnon * laitot_nonevg
         } else {
           sumnon =
           sum(laimax[index]*pctpft[index])
           if (sumnon > 0.) { # don't not consider phenology
-            laiini[index,imonth] =
+            laiini[index,imonth] = # LAI守恒角度
             laimax[index] / sumnon * laitot_nonevg
           } else { # no percentage cover
             laiini[index,imonth] = 0.
@@ -766,8 +775,8 @@ for (ireg in 1:dim(reg)[1]) {
       if (sum(tavg>22.)==12 && sum(prec>25.)==12) {
         ppft[j,i,14+1] = sum(ppft[j,i,c(12:13)+1])
         ppft[j,i,c(12:13)+1] = 0.
-      } else if (herb_cover>75 && sum(laiini[13+1,]>0.)) { # mixed C3/C4 case 
-        frac_c4 = 
+      } else if (herb_cover>75 && sum(laiini[13+1,]>0.)) { # mixed C3/C4 case
+        frac_c4 =
         sum(laiini[13+1, tavg>22. & prec>25.]) / sum(laiini[13+1,])
 
         ppft[j,i,14+1] = ppft[j,i,13+1] * frac_c4
@@ -811,7 +820,7 @@ for (ireg in 1:dim(reg)[1]) {
           laiini[10:15] = 0.
           saiini[10:15] = 0.
           pcrop[j,i] = herb_cover
-        } else { 
+        } else {
           # if herb > crop, remove the crop
           # fraction from herb
           ppft[j,i,16] = pcrop[j,i]
@@ -835,14 +844,14 @@ for (ireg in 1:dim(reg)[1]) {
         #browser()
         saiini[saiini>3.] = 3.
       }
-      
+
       if (abs(sum(pctpft)-1.) > 1e-5) {
-        print("Sum of area is not equle to 100%! STOP!") 
+        print("Sum of area is not equle to 100%! STOP!")
         browser()
       }
-      
+
       if (abs(pcrop[j,i]-ppft[j,i,16]) > 1e-3) {
-        print("Crop area is not conserved! STOP!") 
+        print("Crop area is not conserved! STOP!")
         browser()
       }
 
@@ -878,71 +887,71 @@ for (ireg in 1:dim(reg)[1]) {
   # land cover data
   fillvalue <- 255
   dlname <- "MODIS Land Cover Type (LC_Type1) data product, MCD12Q1 V006"
-  modis_igbp <- ncvar_def("LC", "-", 
-      list(londim, latdim), 
+  modis_igbp <- ncvar_def("LC", "-",
+      list(londim, latdim),
       fillvalue, dlname, prec="short", compression=6)
 
   fillvalue <- -999.
   dlname <- "Monthly landcover LAI values"
-  monthly_lc_lai <- ncvar_def("MONTHLY_LC_LAI", "m^2/m^2", 
-      list(londim, latdim, mondim), 
+  monthly_lc_lai <- ncvar_def("MONTHLY_LC_LAI", "m^2/m^2",
+      list(londim, latdim, mondim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Monthly landcover SAI values"
-  monthly_lc_sai <- ncvar_def("MONTHLY_LC_SAI", "m^2/m^2", 
-      list(londim, latdim, mondim), 
+  monthly_lc_sai <- ncvar_def("MONTHLY_LC_SAI", "m^2/m^2",
+      list(londim, latdim, mondim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Monthly PFT LAI values"
-  monthly_lai <- ncvar_def("MONTHLY_LAI", "m^2/m^2", 
-      list(londim, latdim, pftdim, mondim), 
+  monthly_lai <- ncvar_def("MONTHLY_LAI", "m^2/m^2",
+      list(londim, latdim, pftdim, mondim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Monthly PFT SAI values"
-  monthly_sai <- ncvar_def("MONTHLY_SAI", "m^2/m^2", 
-      list(londim, latdim, pftdim, mondim), 
+  monthly_sai <- ncvar_def("MONTHLY_SAI", "m^2/m^2",
+      list(londim, latdim, pftdim, mondim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Percent crop cover"
-  pct_crop <- ncvar_def("PCT_CROP", "%", 
-      list(londim, latdim), 
+  pct_crop <- ncvar_def("PCT_CROP", "%",
+      list(londim, latdim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Percent urban cover"
-  pct_urban <- ncvar_def("PCT_URBAN", "%", 
-      list(londim, latdim), 
+  pct_urban <- ncvar_def("PCT_URBAN", "%",
+      list(londim, latdim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Percent wetland cover"
-  pct_wetland <- ncvar_def("PCT_WETLAND", "%", 
-      list(londim, latdim), 
+  pct_wetland <- ncvar_def("PCT_WETLAND", "%",
+      list(londim, latdim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Percent glacier/ice cover"
-  pct_glacier <- ncvar_def("PCT_GLACIER", "%", 
-      list(londim, latdim), 
+  pct_glacier <- ncvar_def("PCT_GLACIER", "%",
+      list(londim, latdim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Percent water body cover"
-  pct_water <- ncvar_def("PCT_WATER", "%", 
-      list(londim, latdim), 
+  pct_water <- ncvar_def("PCT_WATER", "%",
+      list(londim, latdim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Percent ocean cover"
-  pct_ocean <- ncvar_def("PCT_OCEAN", "%", 
-      list(londim, latdim), 
+  pct_ocean <- ncvar_def("PCT_OCEAN", "%",
+      list(londim, latdim),
       fillvalue, dlname, prec="float", compression=6)
 
   dlname <- "Percent PFT cover"
-  pct_pft <- ncvar_def("PCT_PFT", "%", 
-      list(londim, latdim, pftdim), 
+  pct_pft <- ncvar_def("PCT_PFT", "%",
+      list(londim, latdim, pftdim),
       fillvalue, dlname, prec="float", compression=6)
 
   # tree height
   fillvalue <- 255
   dlname <- "Global forest canopy height"
-  htop <- ncvar_def("HTOP", "m", 
-      list(londim, latdim), 
+  htop <- ncvar_def("HTOP", "m",
+      list(londim, latdim),
       fillvalue, dlname, prec="short", compression=6)
 
   # create netCDF file
@@ -951,11 +960,11 @@ for (ireg in 1:dim(reg)[1]) {
   print(filename)
   cmd = paste("rm -f ", filename, sep="")
   system(cmd)
-  ncout <- nc_create(filename, 
+  ncout <- nc_create(filename,
       list(modis_igbp, monthly_lc_lai, monthly_lc_sai,
           monthly_lai, monthly_sai, pct_crop, pct_urban,
-          pct_wetland, pct_glacier, pct_water, pct_ocean, 
-          pct_pft, htop), 
+          pct_wetland, pct_glacier, pct_water, pct_ocean,
+          pct_pft, htop),
           force_v4=TRUE, verbose=F)
 
   # put variables

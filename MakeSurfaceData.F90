@@ -2,7 +2,7 @@
 ! ======================================================
 ! aggreate high-resolution land surface dataset to
 ! lower resolutioin
-! 
+!
 ! History:
 !   2019/06: Hua Yuan, initial version
 ! ======================================================
@@ -20,12 +20,12 @@ PROGRAM MakeSurface
    CHARACTER (len=*), parameter :: DATASRC = "MOD"
    CHARACTER (len=*), parameter :: SRF_DIR = "/home/yuanhua/hard/mksrf/srf_5x5/"
    CHARACTER (len=*), parameter :: OUT_DIR = "/home/yuanhua/hard/mksrf/srf_0.5x0.5/"
-   
+
    CHARACTER (len=*), parameter :: Title   = "Land surface model input vagetation data"
    CHARACTER (len=*), parameter :: Authors = "Yuan et al."
    CHARACTER (len=*), parameter :: Address = "School of Atmospheric Sciences, Sun Yat-sen University, Guangzhou, China"
    CHARACTER (len=*), parameter :: Email   = "yuanh25@mail.sysu.edu.cn"
-   
+
    INTEGER, parameter :: nxy   = 1200
    INTEGER, parameter :: nxo   = 720
    INTEGER, parameter :: nyo   = 360
@@ -72,12 +72,12 @@ PROGRAM MakeSurface
 
    ! define other variables
    ! -----------------------------------------------
-   
+
    CHARACTER (len=256) :: FILE_NAME, reg1, reg2, reg3, reg4
-   
+
    INTEGER :: iostatus, reg(4)
    INTEGER :: ncid, times
-   
+
    ! variable ids
    INTEGER :: lon_vid, lat_vid, lc_vid, pft_vid, mon_vid
    INTEGER :: lclai_vid, lcsai_vid, lai_vid, sai_vid
@@ -92,9 +92,9 @@ PROGRAM MakeSurface
    INTEGER :: vpct_urban, vpct_crop, vpct_wetland, vpct_glacier, vpct_water
    INTEGER :: vpct_epft, vlai_epft, vsai_epft
    INTEGER :: months(nmon), pfts(npft), lcs(22)
-  
+
    REAL(r8) :: pi, deg2rad, re, dx, dy, sumarea, wgt, sumpct
-   REAL(r8) :: sarea(nxy,nxy) 
+   REAL(r8) :: sarea(nxy,nxy)
    REAL(r8) :: dll, lone(nxy), lonw(nxy), latn(nxy), lats(nxy)
    REAL(r8) :: lone1(nxy1), lonw1(nxy1), latn1(nxy1), lats1(nxy1), lons1(nxy1)
    REAL(r8) :: latso(nyo), lonso(nxo)
@@ -106,20 +106,20 @@ PROGRAM MakeSurface
    INTEGER :: URBAN, WETLAND, CROP, WATER, GLACIER
 
    INTEGER :: XY2D(2), GRID3d(3), LC3D(3), PFT3D(3), LC4D(4), PFT4D(4), ePFT4D(4), ePFT5D(5)
-   
+
    pi = 4.*atan(1.)
    deg2rad = pi/180.
    re = 6.37122e6 * 0.001
    times = nxy/nxy1
-   
-   IF (DATASRC == "MOD") THEN 
+
+   IF (DATASRC == "MOD") THEN
       nlc = 17
-   ELSE 
+   ELSE
       nlc = 22
    ENDIF
 
    ! MODIS IGBP land cover TYPE
-   IF (DATASRC == "MOD") THEN 
+   IF (DATASRC == "MOD") THEN
       WETLAND = 11
       URBAN   = 13
       GLACIER = 15
@@ -127,7 +127,7 @@ PROGRAM MakeSurface
    ENDIF
 
    ! ESA land cover TYPE
-   IF (DATASRC == "ESA") THEN 
+   IF (DATASRC == "ESA") THEN
       URBAN   = 19
       WATER   = 21
       GLACIER = 22
@@ -185,21 +185,21 @@ PROGRAM MakeSurface
    pct_lc(:,:,:)       = 0.
    pct_elc(:,:,:)      = 0.
    lai_grid(:,:,:)     = 0.
-   sai_grid(:,:,:)     = 0. 
+   sai_grid(:,:,:)     = 0.
    lai_lc(:,:,:,:)     = 0.
-   sai_lc(:,:,:,:)     = 0. 
+   sai_lc(:,:,:,:)     = 0.
    htop_lc(:,:,:)      = 0.
    lai_pft(:,:,:,:)    = 0.
    sai_pft(:,:,:,:)    = 0.
    pct_pft(:,:,:)      = 0.
-   pct_crop(:,:)       = 0. 
-   pct_glacier(:,:)    = 0. 
-   pct_water(:,:)      = 0. 
-   pct_urban(:,:)      = 0. 
-   pct_wetland(:,:)    = 0. 
+   pct_crop(:,:)       = 0.
+   pct_glacier(:,:)    = 0.
+   pct_water(:,:)      = 0.
+   pct_urban(:,:)      = 0.
+   pct_wetland(:,:)    = 0.
    htop_pft(:,:,:)     = 0.
-   lai_epft(:,:,:,:,:) = 0.  
-   sai_epft(:,:,:,:,:) = 0.   
+   lai_epft(:,:,:,:,:) = 0.
+   sai_epft(:,:,:,:,:) = 0.
    pct_epft(:,:,:,:)   = 0.
    area(:,:)           = 0.
 
@@ -207,7 +207,7 @@ PROGRAM MakeSurface
    open(unit=11, file=REGFILE, form='formatted', status='old', action='read')
 
    ! loop for each region
-   DO 
+   DO
       read(11, *, iostat=iostatus) reg
 
       IF (iostatus /= 0) THEN
@@ -280,10 +280,10 @@ PROGRAM MakeSurface
 
       ! calculate the area size of small grids
       DO i = 1, nxy
-         dx = (lone(1)-lonw(1))*deg2rad 
+         dx = (lone(1)-lonw(1))*deg2rad
          dy = sin(latn(i)*deg2rad) - sin(lats(i)*deg2rad)
          sarea(:,i) = dx*dy*re*re
-      ENDDO 
+      ENDDO
 
       ! output grid edge
       dll   = (reg(4)-reg(2))*1./nxy1  ! INTEGER to REAL
@@ -299,7 +299,7 @@ PROGRAM MakeSurface
 !$OMP PRIVATE(k,i1,j1,io,jo,dx,dy,sumarea,i,j,lc,wgt,sumpct,ip,il,im) &
 !$OMP PRIVATE(glai_lc,glai_pft,glai_epft,gsai_lc,gsai_pft,gsai_epft)
       DO k = 1, nxy1*nxy1
-         
+
          ! calculate i1, j1
          i1 = (k-1)/nxy1 + 1
          j1 = mod(k-1, nxy1) + 1
@@ -307,13 +307,13 @@ PROGRAM MakeSurface
          io = int((90 - reg(1))/0.5) + i1
 
          ! calcualte area size
-         dx = (lone1(j1)-lonw1(j1))*deg2rad 
+         dx = (lone1(j1)-lonw1(j1))*deg2rad
          dy = sin(latn1(i1)*deg2rad) - sin(lats1(i1)*deg2rad)
          sumarea = dx*dy*re*re
 
          ! loop for each small grid for aggregation
          DO i = (i1-1)*times+1, i1*times
-            DO j = (j1-1)*times+1, j1*times 
+            DO j = (j1-1)*times+1, j1*times
 
                ! PFT level aggregation
                pct_water  (jo,io) = pct_water  (jo,io) + pwater  (j,i)*sarea(j,i)
@@ -338,6 +338,8 @@ PROGRAM MakeSurface
                   sai_lc (jo,io,lc,:) = sai_lc (jo,io,lc,:) + sarea(j,i)*lcsai(j,i,:)
                   htop_lc(jo,io,lc)   = htop_lc(jo,io,lc)   + sarea(j,i)* htop(j,i)
 
+                  ! 隐含的假设: 水体、冰川、城市、湿地和作物是由专业化的数据或高分辨率数据获得
+                  ! 下面的的代码具有兼容性，但目前并没有进行如上更新
                   ! exclude water, ice, urban, wetland, and crop
                   wgt = max(0., 1.-pwater(j,i)-pglacier(j,i)-purban(j,i)-pwetland(j,i)-pcrop(j,i))
 
@@ -346,7 +348,7 @@ PROGRAM MakeSurface
                   IF (sumpct > 0.) THEN
                      ppft(j,i,1:(npft-1)) = ppft(j,i,1:(npft-1))/sumpct
                   ENDIF
-                  
+
                   DO ip = 1, npft-1
                      pct_pft(jo,io,ip) = pct_pft(jo,io,ip) + &
                         sarea(j,i)*wgt*ppft(j,i,ip)
@@ -356,7 +358,7 @@ PROGRAM MakeSurface
                         sarea(j,i)*wgt*ppft(j,i,ip)*pftlai(j,i,ip,:)
                      sai_pft(jo,io,ip,:) = sai_pft(jo,io,ip,:) + &
                         sarea(j,i)*wgt*ppft(j,i,ip)*pftsai(j,i,ip,:)
-                  ENDDO 
+                  ENDDO
 
                   ! for crop (npft=16, is crop)
                   pct_pft(jo,io,npft) = pct_pft(jo,io,npft) + &
@@ -367,7 +369,7 @@ PROGRAM MakeSurface
                      sarea(j,i)*ppft(j,i,npft)*pftlai(j,i,npft,:)
                   sai_pft(jo,io,npft,:) = sai_pft(jo,io,npft,:) + &
                      sarea(j,i)*ppft(j,i,npft)*pftsai(j,i,npft,:)
-                  
+
                   DO ip = 1, npft-1
                      ! aggregate on ePFT level
                      pct_epft(jo,io,ip,lc) = pct_epft(jo,io,ip,lc) + &
@@ -396,7 +398,7 @@ PROGRAM MakeSurface
                   pct_elc(jo,io,lc) = pct_elc(jo,io,lc) + sarea(j,i)*wgt
                   pct_elc(jo,io,lc) = pct_elc(jo,io,lc) + sarea(j,i)*pcrop(j,i)
 
-                  ! aggregate urban/wetland/crop/ice/water at lc level 
+                  ! aggregate urban/wetland/crop/ice/water at lc level
                   ! ePFT - extended PFT
                   ! 下面做法（已注释）：把非植被分别归类到各自的LC中
                   ! 优点：更符合实际情况，地表组成
@@ -404,7 +406,7 @@ PROGRAM MakeSurface
                   !       植被PFT只需一个土壤(同一LC)，非植被各自
                   !       都需要土壤存储
                   ! 如何LC只保留非植被和植被中一种，即把植被中的非植被
-                  ! 
+                  !
                   ! 聚合到相应的非植被LC里
                   ! 优点：节省内存，土壤column更容易表达(每一个LC就1个土壤，
                   !       若打开crop模块，则两个土壤，若把crop也进行归类，
@@ -420,8 +422,10 @@ PROGRAM MakeSurface
                   !pct_epft(jo,io,21,lc) = pct_epft(jo,io,21,lc) + &
                   !   sarea(j,i)*pwater(j,i)
 
-                  IF (DATASRC=="MOD") THEN 
+                  ! 以下假设城市和湿地包含植被PC
+                  IF (DATASRC=="MOD") THEN
 
+                     ! 城市植被PC及LAI/SAI的赋值
                      IF (purban(j,i) > 0.) THEN
                         pct_elc(jo,io,URBAN) = pct_elc(jo,io,URBAN) + sarea(j,i)*purban(j,i)
 
@@ -436,6 +440,7 @@ PROGRAM MakeSurface
                         ENDDO
                      ENDIF
 
+                     ! 湿地植被PC及LAI/SAI的赋值
                      IF (pwetland(j,i) > 0.) THEN
                         pct_elc(jo,io,WETLAND) = pct_elc(jo,io,WETLAND) + sarea(j,i)*pwetland(j,i)
 
@@ -491,7 +496,7 @@ PROGRAM MakeSurface
          ! calculate LAI
          ! NOTE: Currently, LAI is not conserved to the LC LAIs
          ! ----------------------------------
-        
+
          ! LC level
          DO il = 1, nlc
             IF (pct_lc(jo,io,il) > 0) THEN
@@ -499,7 +504,7 @@ PROGRAM MakeSurface
                 sai_lc(jo,io,il,:) = sai_lc(jo,io,il,:) / pct_lc(jo,io,il)
                htop_lc(jo,io,il)   = htop_lc(jo,io,il)  / pct_lc(jo,io,il)
             ENDIF
-         ENDDO 
+         ENDDO
 
          ! PFT level
          DO ip = 1, npft
@@ -507,8 +512,8 @@ PROGRAM MakeSurface
                 lai_pft(jo,io,ip,:) =  lai_pft(jo,io,ip,:)/pct_pft(jo,io,ip)
                 sai_pft(jo,io,ip,:) =  sai_pft(jo,io,ip,:)/pct_pft(jo,io,ip)
                htop_pft(jo,io,ip)   = htop_pft(jo,io,ip)  /pct_pft(jo,io,ip)
-            ENDIF 
-         ENDDO 
+            ENDIF
+         ENDDO
 
          ! ePFT level
          DO il = 1, nlc
@@ -518,7 +523,7 @@ PROGRAM MakeSurface
                   sai_epft(jo,io,ip,il,:) = sai_epft(jo,io,ip,il,:)/pct_epft(jo,io,ip,il)
                ENDIF
             ENDDO
-         ENDDO 
+         ENDDO
 
          ! calculate fractional cover
          ! ----------------------------------
@@ -527,8 +532,8 @@ PROGRAM MakeSurface
          DO il = 1, nlc
             IF (pct_elc(jo,io,il) > 0) THEN
                pct_epft(jo,io,:,il) = pct_epft(jo,io,:,il)/pct_elc(jo,io,il) * 100.
-            ENDIF 
-         ENDDO 
+            ENDIF
+         ENDDO
 
          IF (pct_land(jo,io) > 0) THEN
             ! PFT level
@@ -546,7 +551,7 @@ PROGRAM MakeSurface
 
          IF (abs(sumarea-area(jo,io))/sumarea > 1e-5) THEN
             print *, "Calculate area error! stop!"
-         ENDIF 
+         ENDIF
 
          ! land fractional cover
          pct_land(jo,io) = pct_land(jo,io) / area(jo,io) * 100.
@@ -577,10 +582,10 @@ PROGRAM MakeSurface
          ENDIF
 
          DO il = 1, nlc
-            IF (DATASRC=="MOD" .and. (il==WATER .or. il==GLACIER .or. il==URBAN .or. il==WETLAND)) THEN 
+            IF (DATASRC=="MOD" .and. (il==WATER .or. il==GLACIER .or. il==URBAN .or. il==WETLAND)) THEN
                cycle
             ENDIF
-            IF (DATASRC=="ESA" .and. (il==WATER .or. il==GLACIER .or. il==URBAN)) THEN 
+            IF (DATASRC=="ESA" .and. (il==WATER .or. il==GLACIER .or. il==URBAN)) THEN
                cycle
             ENDIF
             sumpct = sum(pct_epft(jo,io,:,il))
@@ -588,29 +593,29 @@ PROGRAM MakeSurface
                print *, sumpct
                print *, "Sum of pct_epft not equal 1! stop!"
             ENDIF
-         ENDDO 
+         ENDDO
 
          ! make LAI/SAI conserved to the LC LAI/SAI
          DO im = 1, nmon
-           
+
             ! initialize for grid lai from ePFT
             glai_epft = 0.
             gsai_epft = 0.
-            
+
             glai_lc   = sum(pct_lc(jo,io,:) * lai_lc(jo,io,:,im))
             gsai_lc   = sum(pct_lc(jo,io,:) * sai_lc(jo,io,:,im))
             lai_grid(jo,io,im) = glai_lc/100.
             sai_grid(jo,io,im) = gsai_lc/100.
             glai_pft  = sum(pct_pft(jo,io,:)*lai_pft(jo,io,:,im))
             gsai_pft  = sum(pct_pft(jo,io,:)*sai_pft(jo,io,:,im))
-            
+
             ! add LAI of urban and wetland
             IF (DATASRC=="MOD") THEN
                glai_pft = glai_pft + pct_elc(jo,io,URBAN)  *sum(pct_epft(jo,io,:,URBAN)*lai_epft(jo,io,:,URBAN,im)/100.)
                gsai_pft = gsai_pft + pct_elc(jo,io,URBAN)  *sum(pct_epft(jo,io,:,URBAN)*sai_epft(jo,io,:,URBAN,im)/100.)
                glai_pft = glai_pft + pct_elc(jo,io,WETLAND)*sum(pct_epft(jo,io,:,WETLAND)*lai_epft(jo,io,:,WETLAND,im)/100.)
                gsai_pft = gsai_pft + pct_elc(jo,io,WETLAND)*sum(pct_epft(jo,io,:,WETLAND)*sai_epft(jo,io,:,WETLAND,im)/100.)
-            ENDIF 
+            ENDIF
 
             ! add LAI of urban
             IF (DATASRC=="ESA") THEN
@@ -618,7 +623,7 @@ PROGRAM MakeSurface
                !gsai_pft = gsai_pft + sum(pct_epft(jo,io,:,URBAN)*sai_epft(jo,io,:,URBAN,im))
                glai_pft = glai_pft + pct_elc(jo,io,URBAN)*sum(pct_epft(jo,io,:,URBAN)*lai_epft(jo,io,:,URBAN,im)/100.)
                gsai_pft = gsai_pft + pct_elc(jo,io,URBAN)*sum(pct_epft(jo,io,:,URBAN)*sai_epft(jo,io,:,URBAN,im)/100.)
-            ENDIF 
+            ENDIF
 
 ! yuan, 01/05/2020: BUG!!!!
 ! 把il写成nlc,没有考虑pct_elc%,需要除以100
@@ -627,7 +632,7 @@ PROGRAM MakeSurface
                !gsai_epft = gsai_epft + sum(pct_epft(jo,io,:,il)*sai_epft(jo,io,:,il,im))
                glai_epft = glai_epft + pct_elc(jo,io,il)*sum(pct_epft(jo,io,:,il)*lai_epft(jo,io,:,il,im)/100.)
                gsai_epft = gsai_epft + pct_elc(jo,io,il)*sum(pct_epft(jo,io,:,il)*sai_epft(jo,io,:,il,im)/100.)
-            ENDDO 
+            ENDDO
 
             ! adjust PFT LAI/SAI
             IF (glai_pft > 0. .and. pct_land(jo,io)>1.) THEN
@@ -647,26 +652,26 @@ PROGRAM MakeSurface
                sai_epft(jo,io,:,:,im) = sai_epft(jo,io,:,:,im) * min(2., gsai_lc/gsai_epft)
             ENDIF
 
-         ENDDO 
+         ENDDO
 
       ENDDO  ! loop k
 !$OMP END PARALLEL DO
 
-   ENDDO 
-      
+   ENDDO
+
    ! create NC file
    FILE_NAME = OUT_DIR//'global_0.5x0.5.'//DATASRC//"2005_V4.5.nc"
 
    CALL check( nf90_create(FILE_NAME, NF90_NETCDF4, ncid) )
 
-   ! Define the dimensions. 
+   ! Define the dimensions.
    CALL check( nf90_def_dim(ncid, "lat",  nyo , lat_dimid ) )
    CALL check( nf90_def_dim(ncid, "lon",  nxo , lon_dimid ) )
    CALL check( nf90_def_dim(ncid, "lc" ,  nlc , lc_dimid  ) )
    CALL check( nf90_def_dim(ncid, "pft",  npft, pft_dimid ) )
    CALL check( nf90_def_dim(ncid, "mon",  nmon, mon_dimid ) )
 
-   ! Define the coordinate variables. 
+   ! Define the coordinate variables.
    CALL check( nf90_def_var(ncid, "lat" , NF90_FLOAT, lat_dimid , lat_vid ) )
    CALL check( nf90_def_var(ncid, "lon" , NF90_FLOAT, lon_dimid , lon_vid ) )
    CALL check( nf90_def_var(ncid, "lc"  , NF90_INT  , lc_dimid  , lc_vid  ) )
@@ -855,15 +860,15 @@ PROGRAM MakeSurface
    deallocate( lai_epft     )
    deallocate( sai_epft     )
 
-CONTAINS 
-   
+CONTAINS
+
    SUBROUTINE check(status)
       INTEGER, intent(in) :: status
 
       IF (status /= nf90_noerr) THEN
          print *, trim(nf90_strerror(status))
          stop 2
-      ENDIF 
+      ENDIF
    END SUBROUTINE check
 
 END PROGRAM MakeSurface

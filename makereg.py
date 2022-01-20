@@ -24,4 +24,4 @@ while lat > -90:
                   +str(lat-dll)+' '
                   +str(lon+dll) )
         lon = lon + dll
-    lat = lat - dll    
+    lat = lat - dll

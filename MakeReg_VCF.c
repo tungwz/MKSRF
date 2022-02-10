@@ -1,10 +1,6 @@
 #include "tools.h"
 
 // Define the scope
-//double lon_min = -85.0; double lon_max = -30.0;
-//double lat_min = -20.0; double lat_max =  15.0;
-//double lon_min = -180.0; double lon_max = 180.0;
-//double lat_min = -90.0; double lat_max =  90.0;
 double lon_min; double lon_max;
 double lat_min; double lat_max;
 
@@ -13,7 +9,7 @@ double delta = 1.0/480.0;   // 7.5 sec
 int rows, cols;
 
 // Start and end year
-int sy = 2005, ey = 2005;
+int sy = 2000, ey = 2020;
 
 // Data define
 int **xydata;
@@ -31,7 +27,7 @@ void Free();
 int main(int argc, char *argv[])
 {
   int year, day;
-  int ilat, ilon; 
+  int ilat, ilon;
   int hh, vv;
   double lat, lon;
   POINT pp;
@@ -53,8 +49,9 @@ int main(int argc, char *argv[])
   for (day = 8; day < 9; day++) // Loop for each 8-day step
   {
     // Year loop
-    for (year = sy; year <= ey; year++) 
+    for (year = sy; year <= ey; year=year+5)
     {
+
       // Reproject the data using nearest sampling method
       Echos("Reproject the data using nearest sampling method ...")
 //#pragma omp parallel for num_threads(2) private(ilat, ilon, lat, lon, pp)
@@ -65,15 +62,14 @@ int main(int argc, char *argv[])
           lon = lon_min + delta/2 + ilon*delta;
           lat = lat_max - delta/2 - ilat*delta;
           pp = LL2XY(lon, lat);
-          
+
           xydata[ilat][ilon] = GetXY(&pp, idx, year, day);
         }
       }
-      
+
+      WriteOutData(idx, year, day, lat_max, lon_min, lat_min, lon_max);
       ClearOpened();
     } // End year loop
-    
-    WriteOutData(idx, sy, day, lat_max, lon_min, lat_min, lon_max);
   } // End day loop
 
   // free memory
@@ -93,7 +89,7 @@ void WriteOutData(int idx, int year, int day,
   int i, j, cnt, sum2;
   double sum;
 
-  sprintf(foutdata, "/hard/yuanhua/mksrf/vcf_5x5/RG_%d_%d_%d_%d.%s%04d%03d",
+  sprintf(foutdata, "/tera02/yuanhua/mksrf/vcf_5x5/RG_%d_%d_%d_%d.%s%04d%03d",
       (int)lat1, (int)lon1, (int)lat2, (int)lon2,
       modis[idx].name, year, day*modis[idx].day+1);
 
@@ -104,15 +100,15 @@ void WriteOutData(int idx, int year, int day,
   {
     for (j = 0; j < cols; j=j+2)
     {
-      sum = 0;
+      sum  = 0;
       sum2 = 0;
-      cnt = 0;
+      cnt  = 0;
 
       // water: 200, fillvalue: 253
       if (xydata[i][j]     <= 100) {
         sum = sum + xydata[i][j]; cnt = cnt + 1;
       } else {sum2 = sum2 + xydata[i][j];}
-      
+
       if (xydata[i][j+1]   <= 100) {
         sum = sum + xydata[i][j+1]; cnt = cnt + 1;
       } else {sum2 = sum2 + xydata[i][j+1];}
@@ -134,7 +130,7 @@ void WriteOutData(int idx, int year, int day,
       }
     }
   }
-  
+
   fwrite(outdata[0], sizeof(DTYPE), rows*cols/4, po);
 
   fclose(po);
@@ -159,7 +155,7 @@ void Init()
   for (i = 1; i < rows; i++) {
     xydata[i] = xydata[i-1] + cols;
   }
- 
+
   // Initial outdata
   outdata = (DTYPE **)malloc(sizeof(DTYPE *)*rows/2);
   outdata[0] = (DTYPE *)malloc(sizeof(DTYPE)*rows*cols/4);
@@ -171,7 +167,7 @@ void Init()
   for (i = 1; i < rows/2; i++) {
     outdata[i] = outdata[i-1] + cols/2;
   }
-  
+
   InitTile();
 }
 
@@ -181,6 +177,8 @@ void Free()
 
   free(xydata[0]);
   free(xydata);
+  free(outdata[0]);
+  free(outdata);
 
   FreeTile();
 }

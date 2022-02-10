@@ -24,12 +24,12 @@ typedef struct tile {
 
 // PFT name of MOD12Q1 land cover type 5
 static char pftname[13][30] = {
-  "water", 
+  "water",
   "evergreen needleleaf tree",
   "evergreen broadleaf tree",
   "deciduous needleleaf tree",
   "deciduous broadleaf tree",
-  "shrub", 
+  "shrub",
   "grass",
   "cereal crop",
   "broadleaf crop",
@@ -57,7 +57,7 @@ void SetNoValue(DTYPE **data)
   } else {
     for (i = 0; i < XDIM; i++) {
       for (j = 0; j < YDIM; j++) {
-        data[i][j] = modis[idx].novalue;    
+        data[i][j] = modis[idx].novalue;
       }
     }
   }
@@ -76,9 +76,9 @@ void OpenTile(POINT *point, int idx, int year, int day)
 
   if (!tiles[hh][vv].newed) {
 
-    tiles[hh][vv].pdata = 
+    tiles[hh][vv].pdata =
       (DTYPE **)malloc(sizeof(DTYPE *)*XDIM);
-    tiles[hh][vv].pdata[0] = 
+    tiles[hh][vv].pdata[0] =
       (DTYPE *)malloc(sizeof(DTYPE)*XDIM*YDIM);
 
     for (i = 1; i < YDIM; i++) {
@@ -92,7 +92,7 @@ void OpenTile(POINT *point, int idx, int year, int day)
     tiles[hh][vv].newed = 1;
   }
 
-  tiles[hh][vv].opened = 1; 
+  tiles[hh][vv].opened = 1;
 
   GetFileName(year, day, point->hh, point->vv, idx, filename);
 
@@ -109,9 +109,9 @@ void OpenTileD(int hh, int vv, int idx, int year, int day)
 
   if (!tiles[hh][vv].newed) {
 
-    tiles[hh][vv].pdata = 
+    tiles[hh][vv].pdata =
       (DTYPE **)malloc(sizeof(DTYPE *)*XDIM);
-    tiles[hh][vv].pdata[0] = 
+    tiles[hh][vv].pdata[0] =
       (DTYPE *)malloc(sizeof(DTYPE)*XDIM*YDIM);
 
     for (i = 1; i < YDIM; i++) {
@@ -125,7 +125,7 @@ void OpenTileD(int hh, int vv, int idx, int year, int day)
     tiles[hh][vv].newed = 1;
   }
 
-  tiles[hh][vv].opened = 1; 
+  tiles[hh][vv].opened = 1;
 
   GetFileName(year, day, hh, vv, idx, filename);
 
@@ -213,7 +213,7 @@ void InitTile()
 // ===================================================
 
 void ClearOpened()
-{ 
+{
   int i, j;
 
   // Loop for hh/vv

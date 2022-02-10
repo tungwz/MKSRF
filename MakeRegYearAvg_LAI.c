@@ -9,10 +9,11 @@ double delta = 1.0/240.0;   // 15 sec
 int rows, cols;
 
 // Start and end year
-int sy = 2000, ey = 2020;
+int sy = 2000, ey = 2009;
 
 // Data define
-DTYPE **xydata;
+double **xydata;
+DTYPE **outdata;
 
 // Initialization
 void Init();
@@ -44,15 +45,23 @@ int main(int argc, char *argv[])
   lon_max = atof(argv[5]);
   Init();
 
-  // Year loop
-  for (year = sy; year <= ey; year=year+5)
+  // Day loop
+  for (day = 0; day < NDAYS; day++) // Loop for each 8-day step
   {
-    // Day loop
-    for (day = 0; day < NDAYS; day++) // Loop for each 8-day step
-    {
-      // set 0 for a new day [note: only 0/-1 for non-char data]
-      //memset(xydata[0], 0, rows*cols*sizeof(int));
+    // set 0 for a new day [note: only 0/-1 for non-char data]
+    //memset(xydata[0], 0, rows*cols*sizeof(int));
 
+    // for mul-year average, must need the below
+#pragma omp parallel for num_threads(48) private(ilat, ilon)
+    for (ilat = 0; ilat < rows; ilat++) {
+      for (ilon = 0; ilon < cols; ilon++) {
+        xydata[ilat][ilon] = 0;
+      }
+    }
+
+    // Year loop
+    for (year = sy; year <= ey; year++)
+    {
       // Reproject the data using nearest sampling method
       Echos("Reproject the data using nearest sampling method ...")
 //#pragma omp parallel for num_threads(2) private(ilat, ilon, lat, lon, pp)
@@ -64,14 +73,15 @@ int main(int argc, char *argv[])
           lat = lat_max - delta/2 - ilat*delta;
           pp  = LL2XY(lon, lat);
 
-          xydata[ilat][ilon] = GetXY(&pp, idx, year, day);
+          xydata[ilat][ilon] += GetXY(&pp, idx, year, day);
         }
       }
 
-      WriteOutData(idx, year, day, lat_max, lon_min, lat_min, lon_max);
       ClearOpened();
-    } // End day loop
-  } // End year loop
+    } // End year loop
+
+    WriteOutData(idx, 2005, day, lat_max, lon_min, lat_min, lon_max);
+  } // End day loop
 
   // free memory
   Free();
@@ -94,7 +104,17 @@ void WriteOutData(int idx, int year, int day,
       modis[idx].name, year, day*modis[idx].day+1);
 
   po = fopen(foutdata, "wb");
-  fwrite(xydata[0], sizeof(DTYPE), rows*cols, po);
+
+#pragma omp parallel for private(i, j)
+  for (i = 0; i < rows; i++)
+  {
+    for (j = 0; j < cols; j++)
+    {
+      outdata[i][j] = (int)(xydata[i][j]/((ey-sy+1)*1.0) + 0.5);
+    }
+  }
+
+  fwrite(outdata[0], sizeof(DTYPE), rows*cols, po);
 
   fclose(po);
 }
@@ -108,8 +128,8 @@ void Init()
   cols = (int)((lon_max-lon_min)/delta);
 
   // Initial xydata
-  xydata = (DTYPE **)malloc(sizeof(DTYPE *)*rows);
-  xydata[0] = (DTYPE *)malloc(sizeof(DTYPE)*rows*cols);
+  xydata = (double **)malloc(sizeof(double *)*rows);
+  xydata[0] = (double *)malloc(sizeof(double)*rows*cols);
 
   if (!xydata[0] || !xydata) {
     Err("Alloc memory error! stop!\n");
@@ -117,6 +137,18 @@ void Init()
 
   for (i = 1; i < rows; i++) {
     xydata[i] = xydata[i-1] + cols;
+  }
+
+  // Initial outdata
+  outdata = (DTYPE **)malloc(sizeof(DTYPE *)*rows);
+  outdata[0] = (DTYPE *)malloc(sizeof(DTYPE)*rows*cols);
+
+  if (!outdata[0] || !outdata) {
+    Err("Alloc memory error! stop!\n");
+  }
+
+  for (i = 1; i < rows; i++) {
+    outdata[i] = outdata[i-1] + cols;
   }
 
   InitTile();

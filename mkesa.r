@@ -8,25 +8,32 @@
 
 library(ncdf4)
 
-# tables help to conver 8-day LAI values -> monthly data
+# set year
+year = "2005" # default value, year 2005
+args = commandArgs(T)
+if (!is.na(args[1])) { year = args[1] }
+
+# Table to convert 8-day LAI -> monthly data
+# Method: weighted average
 # ------------------------------------------------------
 
 idx = matrix(0, 12, 5)
 wgt = matrix(0, 12, 5)
 
 # index of 46 8-day's data
-idx[1,]  = c(1, 2, 3, 4, NA)
-idx[2,]  = c(4, 5, 6, 7, 8)
-idx[3,]  = c(8,  9, 10,  11,  12)
-idx[4,]  = c(12, 13,  14,  15,  NA)
-idx[5,]  = c(16, 17,  18,  19,  NA)
-idx[6,]  = c(19, 20,  21,  22,  23)
-idx[7,]  = c(23, 24,  25,  26,  27)
-idx[8,]  = c(27, 28,  29,  30,  31)
-idx[9,]  = c(31, 32,  33,  34,  35)
-idx[10,] = c(35, 36,  37,  38,  NA)
-idx[11,] = c(39, 40,  41,  42,  NA)
-idx[12,] = c(42, 43,  44,  45,  46)
+# 8-day <--> month
+idx[ 1,] = c( 1,  2,  3,  4, NA)
+idx[ 2,] = c( 4,  5,  6,  7,  8)
+idx[ 3,] = c( 8,  9, 10, 11, 12)
+idx[ 4,] = c(12, 13, 14, 15, NA)
+idx[ 5,] = c(16, 17, 18, 19, NA)
+idx[ 6,] = c(19, 20, 21, 22, 23)
+idx[ 7,] = c(23, 24, 25, 26, 27)
+idx[ 8,] = c(27, 28, 29, 30, 31)
+idx[ 9,] = c(31, 32, 33, 34, 35)
+idx[10,] = c(35, 36, 37, 38, NA)
+idx[11,] = c(39, 40, 41, 42, NA)
+idx[12,] = c(42, 43, 44, 45, 46)
 
 # weights of 8-day's data
 wgt[1,]  = c(8, 8, 8, 7, 0)
@@ -44,33 +51,32 @@ wgt[12,] = c(2, 8, 8, 8, 5)
 
 # define resolution
 xydim = 1200
-xydim1 = 600
 
-days  = seq(1, 46, 1)
 mons  = seq(1, 12, 1)
 dom   = c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
 # PFT names
 pftnum = seq(0, 15, 1)
 pftname = c(
-"not_vegetated                           ",
-"needleleaf_evergreen_temperate_tree     ",
-"needleleaf_evergreen_boreal_tree        ",
-"needleleaf_deciduous_boreal_tree        ",
-"broadleaf_evergreen_tropical_tree       ",
-"broadleaf_evergreen_temperate_tree      ",
-"broadleaf_deciduous_tropical_tree       ",
-"broadleaf_deciduous_temperate_tree      ",
-"broadleaf_deciduous_boreal_tree         ",
-"broadleaf_evergreen_temperate_shrub     ",
-"broadleaf_deciduous_temperate_shrub     ",
-"broadleaf_deciduous_boreal_shrub        ",
-"c3_arctic_grass                         ",
-"c3_non-arctic_grass                     ",
-"c4_grass                                ",
-"c3_crop                                 ")
+"not_vegetated                           ", # 0
+"needleleaf_evergreen_temperate_tree     ", # 1
+"needleleaf_evergreen_boreal_tree        ", # 2
+"needleleaf_deciduous_boreal_tree        ", # 3
+"broadleaf_evergreen_tropical_tree       ", # 4
+"broadleaf_evergreen_temperate_tree      ", # 5
+"broadleaf_deciduous_tropical_tree       ", # 6
+"broadleaf_deciduous_temperate_tree      ", # 7
+"broadleaf_deciduous_boreal_tree         ", # 8
+"broadleaf_evergreen_temperate_shrub     ", # 9
+"broadleaf_deciduous_temperate_shrub     ", # 10
+"broadleaf_deciduous_boreal_shrub        ", # 11
+"c3_arctic_grass                         ", # 12
+"c3_non-arctic_grass                     ", # 13
+"c4_grass                                ", # 14
+"c3_crop                                 ") # 15
 
 # values in the table below are from Lawrence et al., 2007
+# with modifications according to Sitch et al., 2003
 laimax = c(0, 5, 5, 5, 7, 7, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4)
 tbase  = c(0, 0, 0, 2, 0, 0, 0, 5, 5, 0, 5, 5, 5, 5, 5, 5)
 sgdd   = c(0, 0, 0, 100, 0, 0, 0, 200, 200, 0, 100, 100, 100, 100, 100, 100)
@@ -93,10 +99,10 @@ laiini = array(0, c(length(pftnum), length(mons)))
 phimin = rep(0.5, length(mons))
 
 # define output data
-lclai  = array(0, c(xydim, xydim, length(mons)))
-lcsai  = array(0, c(xydim, xydim, length(mons)))
-pftlai = array(0, c(xydim, xydim, length(pftnum), length(mons)))
-pftsai = array(0, c(xydim, xydim, length(pftnum), length(mons)))
+lclai    = array(0, c(xydim, xydim, length(mons)))
+lcsai    = array(0, c(xydim, xydim, length(mons)))
+pftlai   = array(0, c(xydim, xydim, length(pftnum), length(mons)))
+pftsai   = array(0, c(xydim, xydim, length(pftnum), length(mons)))
 pcrop    = array(0, c(xydim, xydim))
 purban   = array(0, c(xydim, xydim))
 pwetland = array(0, c(xydim, xydim))
@@ -106,10 +112,10 @@ pocean   = array(0, c(xydim, xydim))
 ppft     = array(0, c(xydim, xydim, length(pftnum)))
 htop500  = array(0, c(xydim, xydim))
 
-ROOT_DIR  = "/home/yuanhua/hard/mksrf/"
-RAW_DIR   = paste(ROOT_DIR, "raw_5x5/", sep="")
-CCI_DIR   = paste(ROOT_DIR, "cci_5x5/", sep="")
-SRF_DIR   = paste(ROOT_DIR, "srf_5x5/", sep="")
+ROOT_DIR = "/home/yuanhua/tera02/mksrf/"
+RAW_DIR  = paste(ROOT_DIR, "raw_5x5/", sep="")
+CCI_DIR  = paste(ROOT_DIR, "cci_5x5/", sep="")
+SRF_DIR  = paste(ROOT_DIR, "srf_5x5/", sep="")
 
 # get regions paras from input file
 reg=read.csv(file=REGFILE, sep='_', header=F)
@@ -118,34 +124,34 @@ regname=read.csv(file=REGFILE, header=F)
 # process the regions one by one
 for (ireg in 1:dim(reg)[1]) {
 
-  filename = paste(RAW_DIR, 'RG_', regname[ireg,1], ".RAW2005.nc", sep="")
+  filename = paste(RAW_DIR, 'RG_', regname[ireg,1], ".RAW", year, ".nc", sep="")
   fraw     = nc_open(filename)
-  filename = paste(CCI_DIR, 'RG_', regname[ireg,1], ".CCI2005.nc", sep="")
+  filename = paste(CCI_DIR, 'RG_', regname[ireg,1], ".CCI", year, ".nc", sep="")
   fcci     = nc_open(filename)
 
   # get raw data
   lcdata   = ncvar_get(fcci, "majority_class_1")
-  kgdata   = ncvar_get(fraw, "KG")
-  laidata  = ncvar_get(fraw, "LAI")
+  kgdata   = ncvar_get(fraw, "KG"  )
+  laidata  = ncvar_get(fraw, "LAI" )
   precdata = ncvar_get(fraw, "PREC")
   tavgdata = ncvar_get(fraw, "TAVG")
   tmaxdata = ncvar_get(fraw, "TMAX")
   tmindata = ncvar_get(fraw, "TMIN")
   htopdata = ncvar_get(fraw, "HTOP")
 
-  tbedata  = ncvar_get(fcci, "Tree_Broadleaf_Evergreen")
-  tbddata  = ncvar_get(fcci, "Tree_Broadleaf_Deciduous")
-  tnedata  = ncvar_get(fcci, "Tree_Needleleaf_Evergreen")
-  tnddata  = ncvar_get(fcci, "Tree_Needleleaf_Deciduous")
-  sbedata  = ncvar_get(fcci, "Shrub_Broadleaf_Evergreen")
-  sbddata  = ncvar_get(fcci, "Shrub_Broadleaf_Deciduous")
+  tbedata  = ncvar_get(fcci, "Tree_Broadleaf_Evergreen"  )
+  tbddata  = ncvar_get(fcci, "Tree_Broadleaf_Deciduous"  )
+  tnedata  = ncvar_get(fcci, "Tree_Needleleaf_Evergreen" )
+  tnddata  = ncvar_get(fcci, "Tree_Needleleaf_Deciduous" )
+  sbedata  = ncvar_get(fcci, "Shrub_Broadleaf_Evergreen" )
+  sbddata  = ncvar_get(fcci, "Shrub_Broadleaf_Deciduous" )
   snedata  = ncvar_get(fcci, "Shrub_Needleleaf_Evergreen")
-  ngdata   = ncvar_get(fcci, "Natural_Grass")
-  mgdata   = ncvar_get(fcci, "Managed_Grass")
-  bsdata   = ncvar_get(fcci, "Bare_Soil")
-  wtdata   = ncvar_get(fcci, "Water")
-  sidata   = ncvar_get(fcci, "Snow_Ice")
-  uadata   = ncvar_get(fcci, "Urban_areas")
+  ngdata   = ncvar_get(fcci, "Natural_Grass"             )
+  mgdata   = ncvar_get(fcci, "Managed_Grass"             )
+  bsdata   = ncvar_get(fcci, "Bare_Soil"                 )
+  wtdata   = ncvar_get(fcci, "Water"                     )
+  sidata   = ncvar_get(fcci, "Snow_Ice"                  )
+  uadata   = ncvar_get(fcci, "Urban_areas"               )
 
   nc_close(fraw)
   nc_close(fcci)
@@ -157,12 +163,12 @@ for (ireg in 1:dim(reg)[1]) {
   sbedata[is.na(sbedata)] = 0.
   sbddata[is.na(sbddata)] = 0.
   snedata[is.na(snedata)] = 0.
-  ngdata[is.na(ngdata)] = 0.
-  mgdata[is.na(mgdata)] = 0.
-  bsdata[is.na(bsdata)] = 0.
-  wtdata[is.na(wtdata)] = 0.
-  sidata[is.na(sidata)] = 0.
-  uadata[is.na(uadata)] = 0.
+  ngdata [is.na(ngdata) ] = 0.
+  mgdata [is.na(mgdata) ] = 0.
+  bsdata [is.na(bsdata) ] = 0.
+  wtdata [is.na(wtdata) ] = 0.
+  sidata [is.na(sidata) ] = 0.
+  uadata [is.na(uadata) ] = 0.
 
   cat("\n")
   print(paste("Start to precess region: ",
@@ -178,8 +184,8 @@ for (ireg in 1:dim(reg)[1]) {
 
       # get data
       # ------------------------------
-      lc = lcdata[j, i]
-      lai = laidata[j, i, ] * 0.1
+      lc   = lcdata[j, i]
+      lai  = laidata[j, i, ] * 0.1
 
       # NOTE: 1Km, 600 x 600
       j1   = floor((j+1)/2)
@@ -198,25 +204,25 @@ for (ireg in 1:dim(reg)[1]) {
       sbe  = sbedata[j,i]*100
       sbd  = sbddata[j,i]*100
       sne  = snedata[j,i]*100
-      ng   = ngdata[j,i]*100
-      mg   = mgdata[j,i]*100
-      bs   = bsdata[j,i]*100
-      wt   = wtdata[j,i]*100
-      si   = sidata[j,i]*100
-      ua   = uadata[j,i]*100
+      ng   = ngdata [j,i]*100
+      mg   = mgdata [j,i]*100
+      bs   = bsdata [j,i]*100
+      wt   = wtdata [j,i]*100
+      si   = sidata [j,i]*100
+      ua   = uadata [j,i]*100
 
       # initialization
-      lclai[j,i,]   = 0.
-      lcsai[j,i,]   = 0.
-      pftlai[j,i,,] = 0.
-      pftsai[j,i,,] = 0.
-      pcrop[j,i]    = 0.
-      purban[j,i]   = 0.
-      pwetland[j,i] = 0.
-      pice[j,i]     = 0.
-      pwater[j,i]   = 0.
-      pocean[j,i]   = 0.
-      ppft[j,i,]    = 0.
+      lclai   [j,i,]  = 0.
+      lcsai   [j,i,]  = 0.
+      pftlai  [j,i,,] = 0.
+      pftsai  [j,i,,] = 0.
+      pcrop   [j,i]   = 0.
+      purban  [j,i]   = 0.
+      pwetland[j,i]   = 0.
+      pice    [j,i]   = 0.
+      pwater  [j,i]   = 0.
+      pocean  [j,i]   = 0.
+      ppft    [j,i,]  = 0.
 
       # set land cover type
       lc = trunc(lc/10)
@@ -233,9 +239,9 @@ for (ireg in 1:dim(reg)[1]) {
 
       # set PFT... fraction
       # ------------------------------
-      pcrop[j,i]  = mg
+      pcrop [j,i] = mg
       purban[j,i] = ua*0.95 # exclude the water body
-      pice[j,i]   = si
+      pice  [j,i] = si
       pwater[j,i] = wt
 
       # vegetation fraction
@@ -380,8 +386,8 @@ for (ireg in 1:dim(reg)[1]) {
         dd5   = c(1:12)*0.
         gdd2  = c(1:12)*0.
         gdd5  = c(1:12)*0.
-        rgdd2  = c(1:12)*0.
-        rgdd5  = c(1:12)*0.
+        rgdd2 = c(1:12)*0.
+        rgdd5 = c(1:12)*0.
       }
 
       while ( mcnt < 12 ) {
@@ -421,8 +427,8 @@ for (ireg in 1:dim(reg)[1]) {
         } else if (5.>=tmin[imonth] && 5.<tavg[imonth] && tavg[imonth]!=tmin[imonth]) {
           dd5[imonth] = (tavg[imonth]-5.)/2.*
           (tavg[imonth]-5.)/(tavg[imonth]-tmin[imonth])*davg +
-          (tmax[imonth]+tavg[imonth]-10)/2.*(dom[imonth]-davg)
-        } else if (5.>=tavg[imonth] && 5<tmax[imonth] && tmax[imonth]!=tavg[imonth]) {
+          (tmax[imonth]+tavg[imonth]-10.)/2.*(dom[imonth]-davg)
+        } else if (5.>=tavg[imonth] && 5.<tmax[imonth] && tmax[imonth]!=tavg[imonth]) {
           dd5[imonth] = (tmax[imonth]-5.)/2.*
           (tmax[imonth]-5.)/(tmax[imonth]-tavg[imonth])*(dom[imonth]-davg)
         } else {
@@ -436,7 +442,7 @@ for (ireg in 1:dim(reg)[1]) {
       # gdd, rgdd
 
       if (dd2[itmin] == 0) {
-        gdd2[itmin] = 0.
+        gdd2 [itmin] = 0.
         rgdd2[itmin] = 0.
       } else {
         nextmonth = itmin%%12 + 1
@@ -444,23 +450,23 @@ for (ireg in 1:dim(reg)[1]) {
         sum = max(0, (tmin[nextmonth]-2.)) +
         max(0, (tmin[prevmonth]-2.))
         if (sum > 0) {
-          gdd2[itmin]  = dd2[itmin]*max(0, tmin[nextmonth]-2.)/sum
+          gdd2 [itmin] = dd2[itmin]*max(0, tmin[nextmonth]-2.)/sum
           rgdd2[itmin] = dd2[itmin]*max(0, tmin[prevmonth]-2.)/sum
         } else {
           if (tavg[nextmonth]+tavg[prevmonth]-2*tavg[itmin] > 0) {
-            gdd2[itmin]  = dd2[itmin]*(tavg[nextmonth]-tavg[itmin])/
+            gdd2 [itmin] = dd2[itmin]*(tavg[nextmonth]-tavg[itmin])/
             (tavg[nextmonth]+tavg[prevmonth]-2*tavg[itmin])
             rgdd2[itmin] = dd2[itmin]*(tavg[prevmonth]-tavg[itmin])/
             (tavg[nextmonth]+tavg[prevmonth]-2*tavg[itmin])
           } else {
-            gdd2[itmin]  = dd2[itmin] * 0.5
+            gdd2 [itmin] = dd2[itmin] * 0.5
             rgdd2[itmin] = dd2[itmin] * 0.5
           }
         }
       }
 
       if (dd5[itmin] == 0) {
-        gdd5[itmin] = 0.
+        gdd5 [itmin] = 0.
         rgdd5[itmin] = 0.
       } else {
         nextmonth = itmin%%12 + 1
@@ -468,16 +474,16 @@ for (ireg in 1:dim(reg)[1]) {
         sum = max(0, (tmin[nextmonth]-5.)) +
         max(0, (tmin[prevmonth]-5.))
         if (sum > 0) {
-          gdd5[itmin]  = dd5[itmin]*max(0, tmin[nextmonth]-5.)/sum
+          gdd5 [itmin] = dd5[itmin]*max(0, tmin[nextmonth]-5.)/sum
           rgdd5[itmin] = dd5[itmin]*max(0, tmin[prevmonth]-5.)/sum
         } else {
           if (tavg[nextmonth]+tavg[prevmonth]-2*tavg[itmin] > 0) {
-            gdd5[itmin]  = dd5[itmin]*(tavg[nextmonth]-tavg[itmin])/
+            gdd5 [itmin] = dd5[itmin]*(tavg[nextmonth]-tavg[itmin])/
             (tavg[nextmonth]+tavg[prevmonth]-2*tavg[itmin])
             rgdd5[itmin] = dd5[itmin]*(tavg[prevmonth]-tavg[itmin])/
             (tavg[nextmonth]+tavg[prevmonth]-2*tavg[itmin])
           } else {
-            gdd5[itmin]  = dd5[itmin] * 0.5
+            gdd5 [itmin] = dd5[itmin] * 0.5
             rgdd5[itmin] = dd5[itmin] * 0.5
           }
         }
@@ -510,18 +516,19 @@ for (ireg in 1:dim(reg)[1]) {
       }
 
       #browser()
-      gdd2[itmin]  = dd2[itmin]
+      #最后设置平均温最小月自身的积温
+      gdd2 [itmin] = dd2[itmin]
       rgdd2[itmin] = dd2[itmin]
-      gdd5[itmin]  = dd5[itmin]
+      gdd5 [itmin] = dd5[itmin]
       rgdd5[itmin] = dd5[itmin]
 
       gdd2 = pmin(gdd2, rgdd2)
       gdd5 = pmin(gdd5, rgdd5)
 
       # calcualte phi using gdd/sgdd
-      phi[4,]  = pmax(phimin, pmin(rep(1,12), gdd2/sgdd[4]))
-      phi[8,]  = pmax(phimin, pmin(rep(1,12), gdd5/sgdd[8]))
-      phi[9,]  = pmax(phimin, pmin(rep(1,12), gdd5/sgdd[9]))
+      phi[ 4,] = pmax(phimin, pmin(rep(1,12), gdd2/sgdd[ 4]))
+      phi[ 8,] = pmax(phimin, pmin(rep(1,12), gdd5/sgdd[ 8]))
+      phi[ 9,] = pmax(phimin, pmin(rep(1,12), gdd5/sgdd[ 9]))
       phi[11,] = pmax(phimin, pmin(rep(1,12), gdd5/sgdd[11]))
       phi[12,] = pmax(phimin, pmin(rep(1,12), gdd5/sgdd[12]))
       phi[13,] = pmax(phimin, pmin(rep(1,12), gdd5/sgdd[13]))
@@ -579,10 +586,10 @@ for (ireg in 1:dim(reg)[1]) {
         } else {
           sumnon =
           sum(laimax[index]*pctpft[index])
-          if (sumnon > 0.) {  # don't not consider phenology
+          if (sumnon > 0.) { # don't not consider phenology
             laiini[index,imonth] =
             laimax[index] / sumnon * laitot_nonevg
-          } else {  # no percentage cover
+          } else { # no percentage cover
             laiini[index,imonth] = 0.
           }
         }
@@ -591,7 +598,7 @@ for (ireg in 1:dim(reg)[1]) {
       #browser()
       # max LAI value limited
       if (sum(laiini>10) > 0) {
-        #  browser()
+        #browser()
         laiini[laiini>10.] = 10
       }
 
@@ -613,15 +620,15 @@ for (ireg in 1:dim(reg)[1]) {
         saiini[,imonth] = pmax(saires+laidiff[,imonth]*0.5, saimin_)
         imonth = imonth + 1
         if (imonth == 13) {
-          if (abs(sum(saiini-saiini_)) > 1.e-5) {
+          if (abs(sum(saiini-saiini_)) > 1.e-6) {
             imonth = 1
             saiini_ = saiini
           }
         }
       }
 
-      laiini[pctpft<1e-5] = 0.
-      saiini[pctpft<1e-5] = 0.
+      laiini[pctpft<1e-6] = 0.
+      saiini[pctpft<1e-6] = 0.
 
       if (sum(laiini>20) > 0) {
         browser()
@@ -636,9 +643,9 @@ for (ireg in 1:dim(reg)[1]) {
       # output data
       pftlai[j,i,,] = laiini
       pftsai[j,i,,] = saiini
-      ppft[j,i,]    = pctpft*sumpctpft
+      ppft  [j,i,]  = pctpft*sumpctpft
 
-      if (abs(sumpctpft+pice[j,i]+pwater[j,i]-100) > 1e-3) {
+      if (abs(sumpctpft+pice[j,i]+pwater[j,i]-100) > 1e-5) {
         print("Sum of area is not equle to 100%! STOP!")
         browser()
       }
@@ -650,13 +657,14 @@ for (ireg in 1:dim(reg)[1]) {
 
       sum = sum(pctpft)
       if (sum > 0) {
-        lclai[j,i,]   = apply(pctpft*laiini, 2, sum)
-        lcsai[j,i,]   = apply(pctpft*saiini, 2, sum)
+        lclai[j,i,] = apply(pctpft*laiini, 2, sum)
+        lcsai[j,i,] = apply(pctpft*saiini, 2, sum)
       } else {
-        lclai[j,i,]   = laitot
-        lcsai[j,i,]   = apply(pctpft*saiini, 2, sum)
+        lclai[j,i,] = laitot
+        lcsai[j,i,] = apply(pctpft*saiini, 2, sum)
       }
-      if(max(abs(lclai[j,i,]-laitot))>1) {
+
+      if (max(abs(lclai[j,i,]-laitot)) > 1) {
         print("LAI not conserved, set it to laitot")
         print(laitot)
         print(lclai[j,i,])
@@ -668,14 +676,14 @@ for (ireg in 1:dim(reg)[1]) {
   }
 
   #browser()
-  dll   = (reg[ireg,4]-reg[ireg,2])/xydim
-  lons  = reg[ireg,2] + c(1:xydim)*dll - dll/2
-  lats  = reg[ireg,1] - c(1:xydim)*dll + dll/2
+  dll  = (reg[ireg,4]-reg[ireg,2])/xydim
+  lons = reg[ireg,2] + c(1:xydim)*dll - dll/2
+  lats = reg[ireg,1] - c(1:xydim)*dll + dll/2
 
-  londim  <- ncdim_def("lon", "degrees_east",  as.single(lons), longname="Longitude")
-  latdim  <- ncdim_def("lat", "degrees_north", as.single(lats), longname="Latitude")
-  pftdim  <- ncdim_def("pft", "PFT index", as.integer(pftnum), longname="Index of PFT")
-  mondim  <- ncdim_def("mon", "month", as.integer(mons), longname="Month of year")
+  londim  <- ncdim_def("lon", "degrees_east",  as.single(lons),    longname="Longitude"    )
+  latdim  <- ncdim_def("lat", "degrees_north", as.single(lats),    longname="Latitude"     )
+  pftdim  <- ncdim_def("pft", "PFT index",     as.integer(pftnum), longname="Index of PFT" )
+  mondim  <- ncdim_def("mon", "month",         as.integer(mons),   longname="Month of year")
 
   # define variables
   # --------------------------------------------------
@@ -752,7 +760,7 @@ for (ireg in 1:dim(reg)[1]) {
 
   # create netCDF file
   # --------------------------------------------------
-  filename = paste(SRF_DIR, "RG_", regname[ireg,1], ".ESA2005.nc", sep="")
+  filename = paste(SRF_DIR, "RG_", regname[ireg,1], ".ESA", year, ".nc", sep="")
   print(filename)
   cmd = paste("rm -f ", filename, sep="")
   system(cmd)
@@ -765,19 +773,19 @@ for (ireg in 1:dim(reg)[1]) {
 
   # put variables
   # --------------------------------------------------
-  ncvar_put(ncout, esa_cci,        lcdata)
-  ncvar_put(ncout, monthly_lc_lai, lclai)
-  ncvar_put(ncout, monthly_lc_sai, lcsai)
-  ncvar_put(ncout, monthly_lai,    pftlai)
-  ncvar_put(ncout, monthly_sai,    pftsai)
-  ncvar_put(ncout, pct_crop,       pcrop)
-  ncvar_put(ncout, pct_urban,      purban)
+  ncvar_put(ncout, esa_cci,        lcdata  )
+  ncvar_put(ncout, monthly_lc_lai, lclai   )
+  ncvar_put(ncout, monthly_lc_sai, lcsai   )
+  ncvar_put(ncout, monthly_lai,    pftlai  )
+  ncvar_put(ncout, monthly_sai,    pftsai  )
+  ncvar_put(ncout, pct_crop,       pcrop   )
+  ncvar_put(ncout, pct_urban,      purban  )
   ncvar_put(ncout, pct_wetland,    pwetland)
-  ncvar_put(ncout, pct_glacier,    pice)
-  ncvar_put(ncout, pct_water,      pwater)
-  ncvar_put(ncout, pct_ocean,      pocean)
-  ncvar_put(ncout, pct_pft,        ppft)
-  ncvar_put(ncout, htop,           htop500)
+  ncvar_put(ncout, pct_glacier,    pice    )
+  ncvar_put(ncout, pct_water,      pwater  )
+  ncvar_put(ncout, pct_ocean,      pocean  )
+  ncvar_put(ncout, pct_pft,        ppft    )
+  ncvar_put(ncout, htop,           htop500 )
 
   # add global attributes
   # --------------------------------------------------

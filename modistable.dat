@@ -1,0 +1,6 @@
+ pid   pname  id     name            gdname                    fldname dim     header xdim ydim day ndays dtype novalue fillvalue valid scale dir
+   1 MCD12Q1  12       LC           MCD12Q1                   LC_Type1   0  MCD12Q1.A 2400 2400   0     1 UCHAR       0       255    17     1 /tera02/yuanhua/modis/MCD12Q1.006/
+   2 MCD15A2H 25     RLAI MOD_Grid_MOD15A2H                   Lai_500m   0 MCD15A2H.A 2400 2400   8    46 UCHAR       0       255   100  0.01 /tera04/yuanhua/modis/RMCD15A2H.061/
+   5 MOD44B   54     PCTT  MOD44B_250m_GRID         Percent_Tree_Cover   0   MOD44B.A 4800 4800   8     1 UCHAR     200       253   100     1 /tera02/yuanhua/modis/MOD44B.006/
+   5 MOD44B   55     PCTH  MOD44B_250m_GRID Percent_NonTree_Vegetation   0   MOD44B.A 4800 4800   8     1 UCHAR     200       253   100     1 /tera02/yuanhua/modis/MOD44B.006/
+   5 MOD44B   56     PCTB  MOD44B_250m_GRID       Percent_NonVegetated   0   MOD44B.A 4800 4800   8     1 UCHAR     200       253   100     1 /tera02/yuanhua/modis/MOD44B.006/

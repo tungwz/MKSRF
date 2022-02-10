@@ -2,7 +2,7 @@
 # which 5x5deg is land only by using World climate data
 # ----------------------------------------
 
-ROOT_DIR  = "/home/yuanhua/hard/mksrf/"
+ROOT_DIR  = "/home/yuanhua/tera02/mksrf/"
 KG_DIR   = paste(ROOT_DIR, "kg_5x5/", sep="")
 
 # get regions paras from input file

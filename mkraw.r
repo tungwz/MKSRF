@@ -5,61 +5,65 @@
 
 library("ncdf4")
 
+# set year
+year = "2005" # default value, year 2005
+args = commandArgs(T)
+if (!is.na(args[1])) { year = args[1] }
+
 # define directory
 # ----------------------------------------
+ROOT_DIR = "/home/yuanhua/tera02/mksrf/"
 
-ROOT_DIR  = "/home/yuanhua/hard/mksrf/"
+RAW_DIR  = paste(ROOT_DIR, "raw_5x5/", sep="")
 
-RAW_DIR   = paste(ROOT_DIR, "raw_5x5/", sep="")
-
-LC_DIR    = paste(ROOT_DIR, "lc_5x5/", sep="")
-LC_SUF    = ".LC2005001"
+LC_DIR   = paste(ROOT_DIR, "lc_5x5/", sep="")
+LC_SUF   = paste(".LC", year, "001",  sep="")
 
 PCTT_DIR = paste(ROOT_DIR, "vcf_5x5/", sep="")
 PCTH_DIR = paste(ROOT_DIR, "vcf_5x5/", sep="")
 PCTB_DIR = paste(ROOT_DIR, "vcf_5x5/", sep="")
-PCTT_SUF = ".PCTT2005065"
-PCTH_SUF = ".PCTH2005065"
-PCTB_SUF = ".PCTB2005065"
+PCTT_SUF = paste(".PCTT", year, "065", sep="")
+PCTH_SUF = paste(".PCTH", year, "065", sep="")
+PCTB_SUF = paste(".PCTB", year, "065", sep="")
 
 HTOP_DIR = paste(ROOT_DIR, "htop_5x5/", sep="")
 HTOP_SUF = ".TREETOP"
 
-BT_DIR = paste(ROOT_DIR, "avhrr_5x5/", sep="")
-NT_DIR = paste(ROOT_DIR, "avhrr_5x5/", sep="")
-ET_DIR = paste(ROOT_DIR, "avhrr_5x5/", sep="")
-DT_DIR = paste(ROOT_DIR, "avhrr_5x5/", sep="")
-BT_SUF = ".B"
-NT_SUF = ".N"
-ET_SUF = ".E"
-DT_SUF = ".D"
+BT_DIR   = paste(ROOT_DIR, "avhrr_5x5/", sep="")
+NT_DIR   = paste(ROOT_DIR, "avhrr_5x5/", sep="")
+ET_DIR   = paste(ROOT_DIR, "avhrr_5x5/", sep="")
+DT_DIR   = paste(ROOT_DIR, "avhrr_5x5/", sep="")
+BT_SUF   = ".B"
+NT_SUF   = ".N"
+ET_SUF   = ".E"
+DT_SUF   = ".D"
 
-KG_DIR    = paste(ROOT_DIR, "kg_5x5/", sep="")
-KG_SUF    = ".KG.nc"
+KG_DIR   = paste(ROOT_DIR, "kg_5x5/", sep="")
+KG_SUF   = ".KG.nc"
 
-LAI_DIR   = paste(ROOT_DIR, "lai_5x5/", sep="")
-LAI_SUF   = ".LAIR2005"
+LAI_DIR  = paste(ROOT_DIR, "lai_5x5/", sep="")
+LAI_SUF  = paste(".RLAI", year, sep="")
 
-PREC_DIR  = paste(ROOT_DIR, "wc_5x5/", sep="")
-TAVG_DIR  = paste(ROOT_DIR, "wc_5x5/", sep="")
-TMAX_DIR  = paste(ROOT_DIR, "wc_5x5/", sep="")
-TMIN_DIR  = paste(ROOT_DIR, "wc_5x5/", sep="")
-PREC_SUF  = ".PREC"
-TAVG_SUF  = ".TAVG"
-TMAX_SUF  = ".TMAX"
-TMIN_SUF  = ".TMIN"
+PREC_DIR = paste(ROOT_DIR, "wc_5x5/", sep="")
+TAVG_DIR = paste(ROOT_DIR, "wc_5x5/", sep="")
+TMAX_DIR = paste(ROOT_DIR, "wc_5x5/", sep="")
+TMIN_DIR = paste(ROOT_DIR, "wc_5x5/", sep="")
+PREC_SUF = ".PREC"
+TAVG_SUF = ".TAVG"
+TMAX_SUF = ".TMAX"
+TMIN_SUF = ".TMIN"
 
 # get regions paras from input file
-reg=read.csv(file="reg_5x5.test", sep='_', header=F)
-regname=read.csv(file="reg_5x5.test", header=F)
+reg=read.csv(file="reg_5x5", sep='_', header=F)
+regname=read.csv(file="reg_5x5", header=F)
 
 # define resolution
-xydim = 1200
-xydim1 = 600
+xydim    = 1200
+xydim1   = 600
 
-days  = seq(1, 46, 1)
-mons  = seq(1, 12, 1)
-laidata  = array(0, c(xydim, xydim, length(days)))
+days     = seq(1, 46, 1)
+mons     = seq(1, 12, 1)
+laidata  = array(0, c(xydim,  xydim,  length(days)))
 precdata = array(0, c(xydim1, xydim1, length(mons)))
 tavgdata = array(0, c(xydim1, xydim1, length(mons)))
 tmaxdata = array(0, c(xydim1, xydim1, length(mons)))
@@ -80,12 +84,12 @@ for (i in 1:dim(reg)[1]) {
   lons1 = reg[i,2] + c(1:xydim1)*dll1 - dll1/2
   lats1 = reg[i,1] - c(1:xydim1)*dll1 + dll1/2
 
-  londim  <- ncdim_def("lon", "degrees_east",  as.single(lons), longname="Longitude")
-  latdim  <- ncdim_def("lat", "degrees_north", as.single(lats), longname="Latitude")
-  londim1 <- ncdim_def("lon1", "degrees_east",  as.single(lons1), longname="Longitude")
-  latdim1 <- ncdim_def("lat1", "degrees_north", as.single(lats1), longname="Latitude")
-  daydim  <- ncdim_def("day", "8-day of year", as.integer(days), longname="8-day of year")
-  mondim  <- ncdim_def("mon", "month of year", as.integer(mons), longname="month of year")
+  londim  <- ncdim_def("lon",  "degrees_east",  as.single(lons),  longname="Longitude"    )
+  latdim  <- ncdim_def("lat",  "degrees_north", as.single(lats),  longname="Latitude"     )
+  londim1 <- ncdim_def("lon1", "degrees_east",  as.single(lons1), longname="Longitude"    )
+  latdim1 <- ncdim_def("lat1", "degrees_north", as.single(lats1), longname="Latitude"     )
+  daydim  <- ncdim_def("day",  "8-day of year", as.integer(days), longname="8-day of year")
+  mondim  <- ncdim_def("mon",  "month of year", as.integer(mons), longname="month of year")
 
   # define variables
   # --------------------------------------------------
@@ -152,7 +156,7 @@ for (i in 1:dim(reg)[1]) {
 
   # lai data
   fillvalue <- 255
-  dlname <- "reprocessed MODIS leaf area index produces, MCD15A2H V006"
+  dlname <- "reprocessed MODIS leaf area index produces, MCD15A2H V061"
   lai <- ncvar_def("LAI", "m2/m2",
       list(londim, latdim, daydim),
       fillvalue, dlname, prec="short", compression=6)
@@ -187,7 +191,7 @@ for (i in 1:dim(reg)[1]) {
 
   # create netCDF file
   # --------------------------------------------------
-  filename = paste(RAW_DIR, "RG_", regname[i,1], ".RAW2005.nc", sep="")
+  filename = paste(RAW_DIR, "RG_", regname[i,1], ".RAW", year, ".nc", sep="")
   cmd = paste("rm -f ", filename, sep="")
   system(cmd)
   ncout <- nc_create(filename,
@@ -201,8 +205,8 @@ for (i in 1:dim(reg)[1]) {
 
   # land cover
   filename = paste(LC_DIR, 'RG_', regname[i,1], LC_SUF, sep="")
-  lcdata = readBin(filename, integer(), xydim*xydim, size=1, signed=F)
-  lcdata = matrix(lcdata, xydim, xydim)
+  lcdata   = readBin(filename, integer(), xydim*xydim, size=1, signed=F)
+  lcdata   = matrix(lcdata, xydim, xydim)
 
   # vcf data
   filename = paste(PCTT_DIR, 'RG_', regname[i,1], PCTT_SUF, sep="")
@@ -219,8 +223,8 @@ for (i in 1:dim(reg)[1]) {
 
   # tree top data
   filename = paste(HTOP_DIR, 'RG_', regname[i,1], HTOP_SUF, sep="")
-  htopdata   = readBin(filename, integer(), xydim1*xydim1, size=1, signed=F)
-  htopdata   = matrix(htopdata, xydim1, xydim1)
+  htopdata = readBin(filename, integer(), xydim1*xydim1, size=1, signed=F)
+  htopdata = matrix(htopdata, xydim1, xydim1)
 
   # avhrr data
   filename = paste(BT_DIR, 'RG_', regname[i,1], BT_SUF, sep="")
@@ -248,8 +252,8 @@ for (i in 1:dim(reg)[1]) {
   # lai data
   for (iday in 1:length(days)) {
     filename = paste(LAI_DIR, 'RG_', regname[i,1], LAI_SUF, sprintf("%0.3d", (iday-1)*8+1), sep="")
-    tmpdata   = readBin(filename, integer(), xydim*xydim, size=1, signed=F)
-    tmpdata   = matrix(tmpdata, xydim, xydim)
+    tmpdata  = readBin(filename, integer(), xydim*xydim, size=1, signed=F)
+    tmpdata  = matrix(tmpdata, xydim, xydim)
     laidata[,,iday] = tmpdata
   }
 
@@ -288,17 +292,17 @@ for (i in 1:dim(reg)[1]) {
 
   # put variables
   # --------------------------------------------------
-  ncvar_put(ncout, lc,   lcdata)
+  ncvar_put(ncout, lc,   lcdata  )
   ncvar_put(ncout, pctt, pcttdata)
   ncvar_put(ncout, pcth, pcthdata)
   ncvar_put(ncout, pctb, pctbdata)
   ncvar_put(ncout, htop, htopdata)
-  ncvar_put(ncout, bt,   btdata)
-  ncvar_put(ncout, nt,   ntdata)
-  ncvar_put(ncout, et,   etdata)
-  ncvar_put(ncout, dt,   dtdata)
-  ncvar_put(ncout, kg,   kgdata)
-  ncvar_put(ncout, lai,  laidata)
+  ncvar_put(ncout, bt,   btdata  )
+  ncvar_put(ncout, nt,   ntdata  )
+  ncvar_put(ncout, et,   etdata  )
+  ncvar_put(ncout, dt,   dtdata  )
+  ncvar_put(ncout, kg,   kgdata  )
+  ncvar_put(ncout, lai,  laidata )
   ncvar_put(ncout, prec, precdata)
   ncvar_put(ncout, tavg, tavgdata)
   ncvar_put(ncout, tmax, tmaxdata)

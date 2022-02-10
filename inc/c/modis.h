@@ -41,11 +41,11 @@ typedef unsigned short int DTYPE;
 // ===================================================
 
 typedef struct modis_table {
-  int pid, id;   
+  int pid, id;
   int xdim, ydim, dim, day, ndays;
   int novalue, fillvalue, valid;
   double scale;
-  char pname[50];  
+  char pname[50];
   char name[50];
   char gdname[50];
   char fldname[50];
@@ -58,7 +58,7 @@ typedef struct modis_table {
 // Global variables
 // ===================================================
 
-// Modis products table 
+// Modis products table
 MODIS_TABLE modis[50];
 int idx;
 

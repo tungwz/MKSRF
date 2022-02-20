@@ -79,8 +79,8 @@ for (i in 1:dim(reg)[1]) {
   # define dimensions
   dll   = (reg[i,4]-reg[i,2])/xydim
   dll1  = (reg[i,4]-reg[i,2])/xydim1
-  lons  = reg[i,2] + c(1:xydim)*dll - dll/2
-  lats  = reg[i,1] - c(1:xydim)*dll + dll/2
+  lons  = reg[i,2] + c(1:xydim) *dll  - dll/2
+  lats  = reg[i,1] - c(1:xydim) *dll  + dll/2
   lons1 = reg[i,2] + c(1:xydim1)*dll1 - dll1/2
   lats1 = reg[i,1] - c(1:xydim1)*dll1 + dll1/2
 
@@ -156,7 +156,7 @@ for (i in 1:dim(reg)[1]) {
 
   # lai data
   fillvalue <- 255
-  dlname <- "reprocessed MODIS leaf area index produces, MCD15A2H V061"
+  dlname <- "Reprocessed MODIS Version 6.1 leaf area index, MCD15A2H V061"
   lai <- ncvar_def("LAI", "m2/m2",
       list(londim, latdim, daydim),
       fillvalue, dlname, prec="short", compression=6)

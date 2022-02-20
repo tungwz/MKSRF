@@ -131,8 +131,8 @@ CCI_DIR  = paste(ROOT_DIR, "cci_5x5/", sep="")
 SRF_DIR  = paste(ROOT_DIR, "srf_5x5/", sep="")
 
 # get regions paras from input file
-reg=read.csv(file=REGFILE, sep='_', header=F)
-regname=read.csv(file=REGFILE, header=F)
+reg=read.csv(file="reg_5x5", sep='_', header=F)
+regname=read.csv(file="reg_5x5", header=F)
 
 # process the regions one by one
 for (ireg in 1:dim(reg)[1]) {
@@ -185,6 +185,19 @@ for (ireg in 1:dim(reg)[1]) {
   mgdata [is.na(mgdata )] = 0.
   uadata [is.na(uadata )] = 0.
 
+  # initialization
+  lclai   [,,]  = 0.
+  lcsai   [,,]  = 0.
+  pftlai  [,,,] = 0.
+  pftsai  [,,,] = 0.
+  pcrop   [,]   = 0.
+  purban  [,]   = 0.
+  pwetland[,]   = 0.
+  pice    [,]   = 0.
+  pwater  [,]   = 0.
+  pocean  [,]   = 0.
+  ppft    [,,]  = 0.
+
   cat("\n")
   print(paste("Start to precess region: ",
           regname[ireg,1], sep=""))
@@ -196,73 +209,14 @@ for (ireg in 1:dim(reg)[1]) {
       #for (i in 125:125) {
       #for (j in 30:30) {
 
-      # get data
+      # NOTE: 1km index, 600 x 600
+      j1 = floor((j+1)/2)
+      i1 = floor((i+1)/2)
+
+      # get land cover and kg zone
       # ------------------------------
-      lc   = lcdata  [j, i]
-      pctt = pcttdata[j, i]
-      pcth = pcthdata[j, i]
-      pctb = pctbdata[j, i]
-      lai  = laidata [j, i, ] * 0.1
-
-      # NOTE: 1km, 600 x 600
-      j1   = floor((j+1)/2)
-      i1   = floor((i+1)/2)
-      bt   = btdata[j1, i1]
-      nt   = ntdata[j1, i1]
-      et   = etdata[j1, i1]
-      dt   = dtdata[j1, i1]
-      kg   = kgdata[j1, i1]
-      prec = precdata[j1, i1, ]
-      tavg = tavgdata[j1, i1, ]
-      tmax = tmaxdata[j1, i1, ]
-      tmin = tmindata[j1, i1, ]
-      htop500[j,i] = htopdata[j1,i1]
-
-      tbe  = tbedata[j,i]*100
-      tbd  = tbddata[j,i]*100
-      tne  = tnedata[j,i]*100
-      tnd  = tnddata[j,i]*100
-      sbe  = sbedata[j,i]*100
-      sbd  = sbddata[j,i]*100
-      sne  = snedata[j,i]*100
-      ng   = ngdata [j,i]*100
-      mg   = mgdata [j,i]*100
-      ua   = uadata [j,i]*100
-
-      # initialization
-      lclai   [j,i,]  = 0.
-      lcsai   [j,i,]  = 0.
-      pftlai  [j,i,,] = 0.
-      pftsai  [j,i,,] = 0.
-      pcrop   [j,i]   = 0.
-      purban  [j,i]   = 0.
-      pwetland[j,i]   = 0.
-      pice    [j,i]   = 0.
-      pwater  [j,i]   = 0.
-      pocean  [j,i]   = 0.
-      ppft    [j,i,]  = 0.
-
-      # ------------------------------------------------------------
-      # set crop/urban/water/glacier/wetland(CoLM) pecent
-      # basic steps/rules:
-      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      # step 1: adjust due to water%, total soil reduced  -> (1-water%)
-      #
-      # step 2: adjust due to ice% (additonal), and crop%
-      #   ice% from bare%
-      #   crop% from grass%
-      #
-      # step 3: adjust due to urban% and wetland%
-      #   urban and wetland have the same vegeta comp as natrural ones
-      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      #
-      # Further update:
-      # the values above need to be updated by higher revolution
-      # data. 用更专业化的数据或更高分辨率的数据对水体、城市、湿地、冰川
-      # 和耕地进行更新。
-      # 注: 目前并没有以上更新，因此水体、城市、湿地和冰川根据 MODIS相应
-      # 的地表分类设置为100%。耕地则进行简单判断，与该格点草本覆盖率相关。
-      # ------------------------------------------------------------
+      lc = lcdata[j, i]
+      kg = kgdata[j1, i1]
 
 # yuan, 1/1/2020: do not calculate ocean points
       # not land, supposed to be ocean
@@ -295,12 +249,61 @@ for (ireg in 1:dim(reg)[1]) {
       } else if (lc == 14) {    # crop% < grass%
         pcrop[j, i] = 50.
       } else if (lc == 15) {    # 100% ice
-        pice[j, i] = 100.
-        next
+        pice[j, i] = 100.;   next
       } else if (lc == 17) {    # 100% water
-        pwater[j, i] = 100.
-        next
+        pwater[j, i] = 100.; next
       }
+
+      # get additional data
+      pctt = pcttdata[j, i]
+      pcth = pcthdata[j, i]
+      pctb = pctbdata[j, i]
+      lai  = laidata [j, i, ] * 0.1
+
+      # NOTE: 1km, 600 x 600
+      bt   = btdata[j1, i1]
+      nt   = ntdata[j1, i1]
+      et   = etdata[j1, i1]
+      dt   = dtdata[j1, i1]
+      prec = precdata[j1, i1, ]
+      tavg = tavgdata[j1, i1, ]
+      tmax = tmaxdata[j1, i1, ]
+      tmin = tmindata[j1, i1, ]
+      htop500[j,i] = htopdata[j1,i1]
+
+      # CCI data
+      tbe  = tbedata[j,i]*100
+      tbd  = tbddata[j,i]*100
+      tne  = tnedata[j,i]*100
+      tnd  = tnddata[j,i]*100
+      sbe  = sbedata[j,i]*100
+      sbd  = sbddata[j,i]*100
+      sne  = snedata[j,i]*100
+      ng   = ngdata [j,i]*100
+      mg   = mgdata [j,i]*100
+      ua   = uadata [j,i]*100
+
+      # ------------------------------------------------------------
+      # set crop/urban/water/glacier/wetland(CoLM) pecent
+      # basic steps/rules:
+      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      # step 1: adjust due to water%, total soil reduced  -> (1-water%)
+      #
+      # step 2: adjust due to ice% (additonal), and crop%
+      #   ice% from bare%
+      #   crop% from grass%
+      #
+      # step 3: adjust due to urban% and wetland%
+      #   urban and wetland have the same vegeta comp as natrural ones
+      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      #
+      # Further update:
+      # the values above need to be updated by higher revolution
+      # data. 用更专业化的数据或更高分辨率的数据对水体、城市、湿地、冰川
+      # 和耕地进行更新。
+      # 注: 目前并没有以上更新，因此水体、城市、湿地和冰川根据 MODIS相应
+      # 的地表分类设置为100%。耕地则进行简单判断，与该格点草本覆盖率相关。
+      # ------------------------------------------------------------
 
       # set vegetation fraction
       # ------------------------------
@@ -513,7 +516,7 @@ for (ireg in 1:dim(reg)[1]) {
             ng  = herb_cover * 1/2.
           }
 
-          ppft[j,i,9+1]  = sbe
+          ppft[j,i, 9+1] = sbe
           ppft[j,i,10+1] = sbd
           ppft[j,i,13+1] = ng
 

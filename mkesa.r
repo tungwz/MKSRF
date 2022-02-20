@@ -170,6 +170,19 @@ for (ireg in 1:dim(reg)[1]) {
   sidata [is.na(sidata) ] = 0.
   uadata [is.na(uadata) ] = 0.
 
+  # initialization
+  lclai   [,,]  = 0.
+  lcsai   [,,]  = 0.
+  pftlai  [,,,] = 0.
+  pftsai  [,,,] = 0.
+  pcrop   [,]   = 0.
+  purban  [,]   = 0.
+  pwetland[,]   = 0.
+  pice    [,]   = 0.
+  pwater  [,]   = 0.
+  pocean  [,]   = 0.
+  ppft    [,,]  = 0.
+
   cat("\n")
   print(paste("Start to precess region: ",
           regname[ireg,1], sep=""))
@@ -182,15 +195,27 @@ for (ireg in 1:dim(reg)[1]) {
       #for (i in 8:8) {
       #for (j in 714:714) {
 
-      # get data
-      # ------------------------------
-      lc   = lcdata[j, i]
-      lai  = laidata[j, i, ] * 0.1
-
       # NOTE: 1Km, 600 x 600
       j1   = floor((j+1)/2)
       i1   = floor((i+1)/2)
-      kg   = kgdata[j1, i1]
+
+      # set land cover type
+      # ------------------------------
+      lc = lcdata[j, i]
+      lc = trunc(lc/10)
+
+      # set no-data to barren
+      if (lc == 0) {lc = 20}
+      lcdata[j,i] = lc
+
+      kg = kgdata[j1, i1]
+      if (kg == 0) {   # ocean case
+        lcdata[j,i] = 0
+        pocean[j,i] = 100
+        next
+      }
+
+      lai  = laidata[j, i, ] * 0.1
       prec = precdata[j1, i1, ]
       tavg = tavgdata[j1, i1, ]
       tmax = tmaxdata[j1, i1, ]
@@ -210,32 +235,6 @@ for (ireg in 1:dim(reg)[1]) {
       wt   = wtdata [j,i]*100
       si   = sidata [j,i]*100
       ua   = uadata [j,i]*100
-
-      # initialization
-      lclai   [j,i,]  = 0.
-      lcsai   [j,i,]  = 0.
-      pftlai  [j,i,,] = 0.
-      pftsai  [j,i,,] = 0.
-      pcrop   [j,i]   = 0.
-      purban  [j,i]   = 0.
-      pwetland[j,i]   = 0.
-      pice    [j,i]   = 0.
-      pwater  [j,i]   = 0.
-      pocean  [j,i]   = 0.
-      ppft    [j,i,]  = 0.
-
-      # set land cover type
-      lc = trunc(lc/10)
-
-      # set no-data to barren
-      if (lc == 0) {lc = 20}
-      lcdata[j,i] = lc
-
-      if (kg == 0) {   # ocean case
-        lcdata[j,i] = 0
-        pocean[j,i] = 100
-        next
-      }
 
       # set PFT... fraction
       # ------------------------------

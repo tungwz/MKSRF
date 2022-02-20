@@ -8,6 +8,11 @@ PROGRAM mkmod
  INTEGER , PARAMETER :: xydim = 1200, pfts = 16, mon = 12
  INTEGER , PARAMETER :: day = 46
 
+ CHARACTER (len=*), PARAMETER :: Title   = "Land surface model input vagetation data"
+ CHARACTER (len=*), PARAMETER :: Authors = "Yuan et al."
+ CHARACTER (len=*), PARAMETER :: Address = "School of Atmospheric Sciences, Sun Yat-sen University, Guangzhou, China"
+ CHARACTER (len=*), PARAMETER :: Email   = "yuanh25@mail.sysu.edu.cn"
+ 
  INTEGER , DIMENSION(12,5) :: idx, wgt
  INTEGER , DIMENSION(46)   :: days
  INTEGER , DIMENSION(12)   :: mons, dom 
@@ -29,17 +34,19 @@ PROGRAM mkmod
  REAL(r8), DIMENSION(1200,1200,16)    :: ppft
  REAL(r8), DIMENSION(1200,1200,16,12) :: pftlai, pftsai
 
- CHARACTER (len=255)  , DIMENSION(16) :: pftname
-
  CHARACTER (len=255) :: ROOT_DIR = "/home/yuanhua/hard/mksrf/"
  CHARACTER (len=255) :: RAW_DIR  = "raw_5x5/"
  CHARACTER (len=255) :: CCI_DIR  = "cci_5x5/"
  CHARACTER (len=255) :: SRF_DIR  = "srf_5x5/"
- 
- CHARACTER (len=255) :: REGFILE  = "5x5_F90"
- CHARACTER (len=255) :: filename
+ CHARACTER (len=255) :: OUT_DIR = "/hard/dongwz/test/"
+
+ CHARACTER (len=255) :: REGFILE  = "reg_5x5"
  CHARACTER (len=4)   :: year = "2005"
- CHARACTER (len=4)    , DIMENSION(4)  :: creg 
+ CHARACTER (len=255) :: filename
+
+ CHARACTER (len=255)  , DIMENSION(16) :: pftname
+ CHARACTER (len=4)    , DIMENSION(4)  :: creg
+
  ! input vars
 
  INTEGER        , DIMENSION(4)            :: reg
@@ -872,10 +879,6 @@ PROGRAM mkmod
              ELSE
                 laiini(:,imonth) = 0.
              ENDIF
-             IF (j==739 .and. i==965 .and. imonth==8) THEN
-                print*, 'debug'
-             ENDIF
-
           ENDDO
 
           ! adjust LAI
@@ -1076,14 +1079,13 @@ PROGRAM mkmod
     ENDDO
 
     dll = (reg(4)-reg(2))*1./(xydim*1.)
-    PRINT*, dll
-    PRINT*, reg(2), reg(1)
+    
     DO dims=1,xydim
        lons(dims) = reg(2) + dims*dll - dll/2
        lats(dims) = reg(1) - dims*dll + dll/2
     ENDDO
 
-    filename = '/hard/dongwz/test/'//TRIM(SRF_DIR)//'RG_'//TRIM(creg(1))//'_'//&
+    filename = TRIM(OUT_DIR)//TRIM(SRF_DIR)//'RG_'//TRIM(creg(1))//'_'//&
                TRIM(creg(2))//'_'//TRIM(creg(3))//'_'//TRIM(creg(4))//'.MOD'//TRIM(year)//'.nc'
     PRINT*, filename
     CALL check( nf90_create(filename, NF90_NETCDF4, ncid) )
@@ -1096,16 +1098,17 @@ PROGRAM mkmod
 
     ! define variables
     ! ---------------------------------------
-    CALL check( nf90_def_var(ncid, "lat", NF90_FLOAT, lat_dimid, lat_vid) )
-    CALL check( nf90_def_var(ncid, "lon", NF90_FLOAT, lon_dimid, lon_vid) )
-    CALL check( nf90_def_var(ncid, "pft", NF90_INT  , pft_dimid, pft_vid) )
-    CALL check( nf90_def_var(ncid, "mon", NF90_INT  , mon_dimid, mon_vid) )
+    CALL check( nf90_def_var(ncid, "lat", NF90_FLOAT, lat_dimid, lat_vid, deflate_level=6) )
+    CALL check( nf90_def_var(ncid, "lon", NF90_FLOAT, lon_dimid, lon_vid, deflate_level=6) )
+    CALL check( nf90_def_var(ncid, "pft", NF90_INT  , pft_dimid, pft_vid, deflate_level=6) )
+    CALL check( nf90_def_var(ncid, "mon", NF90_INT  , mon_dimid, mon_vid, deflate_level=6) )
+
     CALL check( nf90_put_att(ncid, lat_vid, "long_name", "Latitude"     ) )
-    CALL check( nf90_put_att(ncid, lat_vid, "units"    , "degrees north") )
+    CALL check( nf90_put_att(ncid, lat_vid, "units"    , "degrees_north") )
     CALL check( nf90_put_att(ncid, lon_vid, "long_name", "Longitude"    ) )
-    CALL check( nf90_put_att(ncid, lon_vid, "units"    , "degrees east" ) )
+    CALL check( nf90_put_att(ncid, lon_vid, "units"    , "degrees_east" ) )
     CALL check( nf90_put_att(ncid, pft_vid, "long_name", "Index of PFT" ) )
-    CALL check( nf90_put_att(ncid, pft_vid, "units"    , "PFT index"    ) )
+    CALL check( nf90_put_att(ncid, pft_vid, "units"    , "-"            ) )
     CALL check( nf90_put_att(ncid, mon_vid, "long_name", "Month of year") )
     CALL checK( nf90_put_att(ncid, mon_vid, "units"    , "month"        ) )
 
@@ -1121,70 +1124,70 @@ PROGRAM mkmod
     XY3F = (/lon_dimid, lat_dimid, pft_dimid/)
     XY4D = (/lon_dimid, lat_dimid, pft_dimid, mon_dimid/)
  
-    CALL check( nf90_def_var(ncid, "LC" , NF90_SHORT  , XY2D, lc_id) )
+    CALL check( nf90_def_var(ncid, "LC" , NF90_SHORT  , XY2D, lc_id, deflate_level=6) )
     CALL checK( nf90_put_att(ncid, lc_id, "units"     , "-"        ) )
     CALL check( nf90_put_att(ncid, lc_id, "long_name" , "MODIS Land Cover Type (LC_Type1) data product, MCD12Q1 V006") )
     CALL check( nf90_put_att(ncid, lc_id, "_FillValue", shortvalue ) )
 
     fillvalue = -999.
-    CALL check( nf90_def_var(ncid, "MONTHLY_LC_LAI", NF90_FLOAT  , XY3D, clai_id) )
+    CALL check( nf90_def_var(ncid, "MONTHLY_LC_LAI", NF90_FLOAT  , XY3D, clai_id, deflate_level=6) )
     CALL check( nf90_put_att(ncid, clai_id         , "units"     , "m^2/m^2"    ) )
     CALL check( nf90_put_att(ncid, clai_id         , "long_name" , "Monthly landcover LAI values") )
     CALL check( nf90_put_att(ncid, clai_id         , "_FillValue", fillvalue    ) )
 
-    CALL check( nf90_def_var(ncid, "MONTHLY_LC_SAI", NF90_FLOAT  , XY3D, csai_id) )
+    CALL check( nf90_def_var(ncid, "MONTHLY_LC_SAI", NF90_FLOAT  , XY3D, csai_id, deflate_level=6) )
     CALL check( nf90_put_att(ncid, csai_id         , "units"     , "m^2/m^2"    ) )
     CALL check( nf90_put_att(ncid, csai_id         , "long_name" , "Monthly landcover SAI values") )
     CALL check( nf90_put_att(ncid, csai_id         , "_FillValue", fillvalue    ) )
 
-    CALL check( nf90_def_var(ncid, "MONTHLY_LAI"   , NF90_FLOAT  , XY4D, plai_id) )
+    CALL check( nf90_def_var(ncid, "MONTHLY_LAI"   , NF90_FLOAT  , XY4D, plai_id, deflate_level=6) )
     CALL check( nf90_put_att(ncid, plai_id         , "units"     , "m^2/m^2"    ) )
     CALL check( nf90_put_att(ncid, plai_id         , "long_name" , "Monthly PFT LAI values") )
     CALL check( nf90_put_att(ncid, plai_id         , "_FillValue", fillvalue    ) )
 
-    CALL check( nf90_def_var(ncid, "MONTHLY_SAI"   , NF90_FLOAT  , XY4D, psai_id) )
+    CALL check( nf90_def_var(ncid, "MONTHLY_SAI"   , NF90_FLOAT  , XY4D, psai_id, deflate_level=6) )
     CALL check( nf90_put_att(ncid, psai_id         , "units"     , "m^2/m^2"    ) )
     CALL check( nf90_put_att(ncid, psai_id         , "long_name" , "Monthly PFT SAI values") )
     CALL check( nf90_put_att(ncid, psai_id         , "_FillValue", fillvalue    ) )
 
-    CALL check( nf90_def_var(ncid, "PCT_CROP"      , NF90_FLOAT  , XY2D, crop_id) )
+    CALL check( nf90_def_var(ncid, "PCT_CROP"      , NF90_FLOAT  , XY2D, crop_id, deflate_level=6) )
     CALL check( nf90_put_att(ncid, crop_id         , "units"     , "%"          ) )
     CALL check( nf90_put_att(ncid, crop_id         , "long_name" , "Percent crop cover") )
     CALL check( nf90_put_att(ncid, crop_id         , "_FillValue", fillvalue    ) )
 
-    CALL check( nf90_def_var(ncid, "PCT_URBAN"     , NF90_FLOAT  , XY2D, urbn_id) )
+    CALL check( nf90_def_var(ncid, "PCT_URBAN"     , NF90_FLOAT  , XY2D, urbn_id, deflate_level=6) )
     CALL check( nf90_put_att(ncid, urbn_id         , "units"     , "%"          ) )
     CALL check( nf90_put_att(ncid, urbn_id         , "long_name" , "Percent urban cover") )
     CALL check( nf90_put_att(ncid, urbn_id         , "_FillValue", fillvalue    ) )
 
-    CALL check( nf90_def_var(ncid, "PCT_WETLAND"   , NF90_FLOAT  , XY2D, wetl_id) )
+    CALL check( nf90_def_var(ncid, "PCT_WETLAND"   , NF90_FLOAT  , XY2D, wetl_id, deflate_level=6) )
     CALL check( nf90_put_att(ncid, wetl_id         , "units"     , "%"          ) )
     CALL check( nf90_put_att(ncid, wetl_id         , "long_name" , "Percent wetland cover") )
     CALL check( nf90_put_att(ncid, wetl_id         , "_FillValue", fillvalue    ) )
 
-    CALL check( nf90_def_var(ncid, "PCT_GLACIER"   , NF90_FLOAT  , XY2D, gice_id) )
+    CALL check( nf90_def_var(ncid, "PCT_GLACIER"   , NF90_FLOAT  , XY2D, gice_id, deflate_level=6) )
     CALL check( nf90_put_att(ncid, gice_id         , "units"     , "%"          ) )
     CALL check( nf90_put_att(ncid, gice_id         , "long_name" , "Percent glacier/ice cover") )
     CALL check( nf90_put_att(ncid, gice_id         , "_FillValue", fillvalue    ) )
 
-    CALL check( nf90_def_var(ncid, "PCT_WATER"     , NF90_FLOAT  , XY2D, watr_id) )
+    CALL check( nf90_def_var(ncid, "PCT_WATER"     , NF90_FLOAT  , XY2D, watr_id, deflate_level=6) )
     CALL checK( nf90_put_att(ncid, watr_id         , "units"     , "%"          ) )
     CALL check( nf90_put_att(ncid, watr_id         , "long_name" , "Percent water body cover") )
     CALL check( nf90_put_att(ncid, watr_id         , "_FillValue", fillvalue    ) )
 
-    CALL check( nf90_def_var(ncid, "PCT_OCEAN"     , NF90_FLOAT  , XY2D, ocea_id) )
+    CALL check( nf90_def_var(ncid, "PCT_OCEAN"     , NF90_FLOAT  , XY2D, ocea_id, deflate_level=6) )
     CALL check( nf90_put_att(ncid, ocea_id         , "units"     , "%"          ) )
     CALL check( nf90_put_att(ncid, ocea_id         , "long_name" , "Percent ocean cover") )
     CALL check( nf90_put_att(ncid, ocea_id         , "_FillValue", fillvalue    ) )
 
-    CALL check( nf90_def_var(ncid, "PCT_PFT"       , NF90_FLOAT  , XY3F, ppft_id) )
+    CALL check( nf90_def_var(ncid, "PCT_PFT"       , NF90_FLOAT  , XY3F, ppft_id, deflate_level=6) )
     CALL check( nf90_put_att(ncid, ppft_id         , "units"     , "%"          ) )
     CALL check( nf90_put_att(ncid, ppft_id         , "long_name" , "Percent PFT cover") )
     CALL checK( nf90_put_att(ncid, ppft_id         , "_FillValue", fillvalue    ) )
 
     ! tree height
     shortvalue = 255
-    CALL check( nf90_def_var(ncid, "HTOP"          , NF90_SHORT  , XY2D, htop_id) )
+    CALL check( nf90_def_var(ncid, "HTOP"          , NF90_SHORT  , XY2D, htop_id, deflate_level=6) )
     CALL check( nf90_put_att(ncid, htop_id         , "units"     , "m"          ) )
     CALL check( nf90_put_att(ncid, htop_id         , "long_name" , "Global forest canopy height") )
     CALL check( nf90_put_att(ncid, htop_id         , "_FillValue", shortvalue   ) )
@@ -1216,6 +1219,11 @@ PROGRAM mkmod
     CALL check( nf90_put_var  (ncid, ppft_id         , ppft    ) )
     CALL check( nf90_inq_varid(ncid, "HTOP"          , htop_id ) )
     CALL check( nf90_put_var  (ncid, htop_id         , htop500 ) )
+
+    CALL check( nf90_put_att(ncid, NF90_GLOBAL, 'Title'  , Title  ) )
+    CALL check( nf90_put_att(ncid, NF90_GLOBAL, 'Authors', Authors) )
+    CALL check( nf90_put_att(ncid, NF90_GLOBAL, 'Adderss', Address) )
+    CALL check( nf90_put_att(ncid, NF90_GLOBAL, 'Email'  , Email  ) )
 
     CALL check( nf90_close(ncid) )
 

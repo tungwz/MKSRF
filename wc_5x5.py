@@ -3,7 +3,7 @@
 import numpy
 import os
 
-reg = numpy.loadtxt('reg_5x5', delimiter='_')
+reg = numpy.loadtxt('reg_5x5')
 cnt = 1
 
 month = ["01","02","03","04","05","06","07","08","09","10","11","12"]

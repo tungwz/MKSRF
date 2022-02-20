@@ -118,15 +118,16 @@ CCI_DIR  = paste(ROOT_DIR, "cci_5x5/", sep="")
 SRF_DIR  = paste(ROOT_DIR, "srf_5x5/", sep="")
 
 # get regions paras from input file
-reg=read.csv(file=REGFILE, sep='_', header=F)
-regname=read.csv(file=REGFILE, header=F)
+reg=read.csv(file="reg_5x5", sep=' ', header=F)
 
 # process the regions one by one
 for (ireg in 1:dim(reg)[1]) {
 
-  filename = paste(RAW_DIR, 'RG_', regname[ireg,1], ".RAW", year, ".nc", sep="")
+  regname  = paste(reg[i,1],reg[i,2],reg[i,3],reg[i,4],sep="_")
+
+  filename = paste(RAW_DIR, 'RG_', regname, ".RAW", year, ".nc", sep="")
   fraw     = nc_open(filename)
-  filename = paste(CCI_DIR, 'RG_', regname[ireg,1], ".CCI", year, ".nc", sep="")
+  filename = paste(CCI_DIR, 'RG_', regname, ".CCI", year, ".nc", sep="")
   fcci     = nc_open(filename)
 
   # get raw data
@@ -184,8 +185,7 @@ for (ireg in 1:dim(reg)[1]) {
   ppft    [,,]  = 0.
 
   cat("\n")
-  print(paste("Start to precess region: ",
-          regname[ireg,1], sep=""))
+  print(paste("Start to precess region: ", regname, sep=""))
 
   # loop for each small 500m grid
   for (i in 1:xydim) {
@@ -759,7 +759,7 @@ for (ireg in 1:dim(reg)[1]) {
 
   # create netCDF file
   # --------------------------------------------------
-  filename = paste(SRF_DIR, "RG_", regname[ireg,1], ".ESA", year, ".nc", sep="")
+  filename = paste(SRF_DIR, "RG_", regname, ".ESA", year, ".nc", sep="")
   print(filename)
   cmd = paste("rm -f ", filename, sep="")
   system(cmd)

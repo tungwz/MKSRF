@@ -75,7 +75,7 @@ PROGRAM mkmod
  INTEGER         :: i, j, i1, j1, imonth, itmin, nextmonth, prevmonth, &
                      imonth_prev, laimaxloc, iloop, inx, inx1, ipft, ireg, mcnt
 
- INTEGER , DIMENSION(5)     :: indx1=(/4,7,8,9,10/)
+ INTEGER , DIMENSION(5)     :: indx1=(/2,3,5,6,10/)
  INTEGER , DIMENSION(10)    :: indx2=(/4,7,8,9,11,12,13,14,15,16/)
  REAL                       :: fillvalue
  REAL(r8), DIMENSION(46)    :: lai
@@ -91,17 +91,17 @@ PROGRAM mkmod
  INTEGER  :: XY2D(2), XY3D(3), XY4D(4), XY3F(3) 
 
  ! index of 46 8-day's data
- idx(1,:)  = (/1, 2, 3, 4, 0/)
- idx(2,:)  = (/4, 5, 6, 7, 8/)
- idx(3,:)  = (/8, 9, 10, 11, 12/)
- idx(4,:)  = (/12, 13, 14, 15, 0/)
- idx(5,:)  = (/16, 17, 18, 19, 0/)
+ idx(1,:)  = (/ 1,  2,  3,  4,  0/)
+ idx(2,:)  = (/ 4,  5,  6,  7,  8/)
+ idx(3,:)  = (/ 8,  9, 10, 11, 12/)
+ idx(4,:)  = (/12, 13, 14, 15,  0/)
+ idx(5,:)  = (/16, 17, 18, 19,  0/)
  idx(6,:)  = (/19, 20, 21, 22, 23/)
  idx(7,:)  = (/23, 24, 25, 26, 27/)
  idx(8,:)  = (/27, 28, 29, 30, 31/)
  idx(9,:)  = (/31, 32, 33, 34, 35/)
- idx(10,:) = (/35, 36, 37, 38, 0/)
- idx(11,:) = (/39, 40, 41, 42, 0/)
+ idx(10,:) = (/35, 36, 37, 38,  0/)
+ idx(11,:) = (/39, 40, 41, 42,  0/)
  idx(12,:) = (/42, 43, 44, 45, 46/)
 
  ! weights of 8-day's data
@@ -153,7 +153,7 @@ PROGRAM mkmod
  ! values in the table below are from Lawrence et al., 2007
  ! with modifications according to Sitch et al., 2003
  laimax = (/0, 5, 5, 5, 7, 7, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4/)
- tbcase  = (/0, 0, 0, 2, 0, 0, 0, 5, 5, 0, 5, 5, 5, 5, 5, 5/)
+ tbcase = (/0, 0, 0, 2, 0, 0, 0, 5, 5, 0, 5, 5, 5, 5, 5, 5/)
  sgdd   = (/0, 0, 0, 100, 0, 0, 0, 200, 200, 0, 100, 100, 100, 100, 100, 100/)
  minfr  = (/0., 0.7, 0.7, 0., 0.8, 0.8, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0./)
  saimin = (/0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.1/)
@@ -163,22 +163,6 @@ PROGRAM mkmod
  phimin(:)   = 0.5
  phi   (:,:) = 1.
  laiini(:,:) = 0.
-
- ! initialize output data
- pcrop   (:,:) = 0
- purban  (:,:) = 0
- pwetland(:,:) = 0
- pice    (:,:) = 0
- pwater  (:,:) = 0
- pocean  (:,:) = 0
- htop500 (:,:) = 0
-
- lclai (:,:,:) = 0.
- lcsai (:,:,:) = 0.
- ppft  (:,:,:) = 0
-
- pftlai(:,:,:,:) = 0.
- pftsai(:,:,:,:) = 0.
  
  OPEN(11,FILE=REGFILE)
  OPEN(12,FILE=REGFILE)
@@ -299,6 +283,21 @@ PROGRAM mkmod
     WHERE(mgdata  /= mgdata)  mgdata =0.
     WHERE(uadata  /= uadata)  uadata =0.
 
+    ! initialization
+    pcrop   (:,:) = 0
+    purban  (:,:) = 0
+    pwetland(:,:) = 0
+    pice    (:,:) = 0
+    pwater  (:,:) = 0
+    pocean  (:,:) = 0
+
+    ppft (:,:,:)  = 0
+    lclai(:,:,:)  = 0
+    lcsai(:,:,:)  = 0
+
+    pftlai(:,:,:,:) = 0
+    pftsai(:,:,:,:) = 0
+
     !PRINT*, '\n'
     PRINT*, 'Start to process region: ', reg
 
@@ -309,72 +308,14 @@ PROGRAM mkmod
           !PRINT*, j
           ! get data
           !------------
-          lc     = lcdata  (j,i)
-          pctt   = pcttdata(j,i)
-          pcth   = pcthdata(j,i)
-          pctb   = pctbdata(j,i)
-          lai(:) = laidata (j,i,:)*0.1
 
           ! NOTE: 1km, 600x600
           j1 = CEILING(j*1./2)
           i1 = CEILING(i*1./2)
 
-          bt   = btdata(j1,i1)
-          nt   = ntdata(j1,i1)
-          et   = etdata(j1,i1)
-          dt   = dtdata(j1,i1)
-          kg   = kgdata(j1,i1)
-
-          prec(:) = precdata(j1,i1,:)
-          tavg(:) = tavgdata(j1,i1,:)
-          tmax(:) = tmaxdata(j1,i1,:)
-          tmin(:) = tmindata(j1,i1,:)
-          htop500(j,i) = htopdata(j1,i1)
-
-          tbe  = tbedata(j,i)*100
-          tbd  = tbddata(j,i)*100
-          tne  = tnedata(j,i)*100
-          tnd  = tnddata(j,i)*100
-          sbe  = sbedata(j,i)*100
-          sbd  = sbddata(j,i)*100
-          sne  = snedata(j,i)*100
-          ng   = ngdata (j,i)*100
-          mg   = mgdata (j,i)*100
-          ua   = uadata (j,i)*100
-
-          ! initialization
-          pcrop   (j,i) = 0
-          purban  (j,i) = 0
-          pwetland(j,i) = 0
-          pice    (j,i) = 0
-          pwater  (j,i) = 0
-          pocean  (j,i) = 0
-
-          ppft (j,i,:)  = 0
-          lclai(j,i,:)  = 0.
-          lcsai(j,i,:)  = 0
-
-          pftlai(j,i,:,:) = 0
-          pftsai(j,i,:,:) = 0
-
-      ! ------------------------------------------------------------
-      ! set crop/urban/water/glacier/wetland(CoLM) pecent
-      ! basic steps/rules:
-      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      ! step 1: adjust due to water%, total soil reduced  -> (1-water%)
-      !
-      ! step 2: adjust due to ice% (additonal), and crop%
-      !   ice% from bare%
-      !   crop% from %grass
-      !
-      ! step 3: adjust due to urban% and wetland%
-      !   urban and wetland have the same vegeta comp as natrural ones
-      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      !
-      ! Further update:
-      ! the values above need to be updated by higher revolution
-      ! data.
-      ! ------------------------------------------------------------
+          ! get land cover and kg zone
+          lc = lcdata(j,i)
+          kg = kgdata(j1,i1)
 
       ! yuan, 1/1/2020: do not calculate ocean points
       ! not land, supposed to be ocean
@@ -383,13 +324,13 @@ PROGRAM mkmod
              pocean(j,i) = 100
              CYCLE
           ENDIF
+
       ! yuan, 1/2/2020: set NA data to ocean
       ! inconsistant with soil data
       ! right now only process RG_25_150_25_155
       ! need to deal with other regions
       ! !!!NOTE: 需要重新run这个程序，使与land cover type保持一致
-      ! set NA data to barren
-          
+          ! set NA data to barren
           IF (lc /= lc) THEN
              !lc = 16
              !lcdata(j,i) = 16
@@ -397,12 +338,6 @@ PROGRAM mkmod
              pocean(j,i) = 100.
              CYCLE
           ENDIF
-      ! yuan, 1/1/2020: move it to the first
-      ! not land, supposed to be ocean
-      !    IF (kg == 0) THEN
-      !       lcdata(j,i) = 0
-      !       pocean(j,i) = 100.
-      !    ENDIF
           
           IF (lc == 11) THEN
              pwetland(j,i) = 100.
@@ -419,6 +354,59 @@ PROGRAM mkmod
              pwater(j,i) = 100.
              CYCLE
           ENDIF
+
+          ! get additional data
+          pctt   = pcttdata(j,i)
+          pcth   = pcthdata(j,i)
+          pctb   = pctbdata(j,i)
+          lai(:) = laidata (j,i,:)*0.1
+
+
+          ! NOTE: 1km, 600x600
+          bt   = btdata(j1,i1)
+          nt   = ntdata(j1,i1)
+          et   = etdata(j1,i1)
+          dt   = dtdata(j1,i1)
+
+          prec(:) = precdata(j1,i1,:)
+          tavg(:) = tavgdata(j1,i1,:)
+          tmax(:) = tmaxdata(j1,i1,:)
+          tmin(:) = tmindata(j1,i1,:)
+          htop500(j,i) = htopdata(j1,i1)
+
+          ! CCI data
+          tbe  = tbedata(j,i)*100
+          tbd  = tbddata(j,i)*100
+          tne  = tnedata(j,i)*100
+          tnd  = tnddata(j,i)*100
+          sbe  = sbedata(j,i)*100
+          sbd  = sbddata(j,i)*100
+          sne  = snedata(j,i)*100
+          ng   = ngdata (j,i)*100
+          mg   = mgdata (j,i)*100
+          ua   = uadata (j,i)*100
+
+          ! ------------------------------------------------------------
+          ! set crop/urban/water/glacier/wetland(CoLM) pecent
+          ! basic steps/rules:
+          ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          ! step 1: adjust due to water%, total soil reduced  -> (1-water%)
+          !
+          ! step 2: adjust due to ice% (additonal), and crop%
+          !   ice% from bare%
+          !   crop% from grass%
+          !
+          ! step 3: adjust due to urban% and wetland%
+          !   urban and wetland have the same vegeta comp as natrural ones
+          ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          !
+          ! Further update:
+          ! the values above need to be updated by higher revolution
+          ! data. 用更专业化的数据或更高分辨率的数据对水体、城市、湿地、冰川
+          ! 和耕地进行更新。
+          ! 注: 目前并没有以上更新，因此水体、城市、湿地和冰川根据 MODIS相应
+          ! 的地表分类设置为100%。耕地则进行简单判断，与该格点草本覆盖率相关。
+          ! ------------------------------------------------------------
 
           ! set vegetation fraction
           ! ------------------------------
@@ -635,7 +623,7 @@ PROGRAM mkmod
                    ng  = herb_cover * 1/2.
                 ENDIF
 
-                ppft(j,i,9+1 ) = sbe
+                ppft(j,i, 9+1) = sbe
                 ppft(j,i,10+1) = sbd
                 ppft(j,i,13+1) = ng
              
@@ -902,11 +890,11 @@ PROGRAM mkmod
              ENDDO
 
              ! calculate for nonevergreen PFT
-             indx1  = (/2,3,5,6,10/)
+             !indx1  = (/2,3,5,6,10/)
              sumevg = sum(laiini(indx1(:),imonth)*pctpft(indx1(:)))
              laitot_nonevg = max(laitot(imonth)-sumevg, 0.)
 
-             indx2  = (/4,7,8,9,11,12,13,14,15,16/)
+             !indx2  = (/4,7,8,9,11,12,13,14,15,16/)
              
              sumnon = sum(phi(indx2(:),imonth)*laimax(indx2(:))*pctpft(indx2(:)))
              IF (sumnon > 0.) THEN

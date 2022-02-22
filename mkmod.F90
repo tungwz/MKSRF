@@ -1,4 +1,15 @@
+
 PROGRAM mkmod
+
+!=======================================================
+! Make high-resolution land surface input dataset
+!
+! ________________
+! History:
+!   2019/06: Hua Yuan, Initial R code version
+!   2022/02: Wenzong Dong, Rewrite R code to Fortran version
+!
+!=======================================================================
 
  use netcdf
 
@@ -34,21 +45,20 @@ PROGRAM mkmod
  REAL(r8), DIMENSION(1200,1200,16)    :: ppft
  REAL(r8), DIMENSION(1200,1200,16,12) :: pftlai, pftsai
 
- CHARACTER (len=255) :: ROOT_DIR = "/home/yuanhua/hard/mksrf/"
+ CHARACTER (len=255) :: ROOT_DIR = "/home/yuanhua/tera02/mksrf/"
  CHARACTER (len=255) :: RAW_DIR  = "raw_5x5/"
  CHARACTER (len=255) :: CCI_DIR  = "cci_5x5/"
  CHARACTER (len=255) :: SRF_DIR  = "srf_5x5/"
- CHARACTER (len=255) :: OUT_DIR = "/hard/dongwz/test/"
+ CHARACTER (len=255) :: OUT_DIR  = "/home/yuanhua/tera02/mksrf/"
 
  CHARACTER (len=255) :: REGFILE  = "reg_5x5"
- CHARACTER (len=4)   :: year = "2005"
+ CHARACTER (len=4)   :: year     = "2005"
  CHARACTER (len=255) :: filename
 
  CHARACTER (len=255)  , DIMENSION(16) :: pftname
  CHARACTER (len=4)    , DIMENSION(4)  :: creg
 
  ! input vars
-
  INTEGER        , DIMENSION(4)            :: reg
  INTEGER(kind=2), DIMENSION(1200,1200)    :: lcdata, htop500
  REAL(r8)       , DIMENSION(1200,1200)    :: pcttdata, pcthdata, pctbdata
@@ -70,10 +80,10 @@ PROGRAM mkmod
             psai_id, slai_id, urbn_id, watr_id, wetl_id
 
  ! vars
- INTEGER(kind=2) :: shortvalue
+ INTEGER(kind=2) :: fillvalue_short
  INTEGER         :: loc1(1), loc2(1)
  INTEGER         :: i, j, i1, j1, imonth, itmin, nextmonth, prevmonth, &
-                     imonth_prev, laimaxloc, iloop, inx, inx1, ipft, ireg, mcnt
+                    imonth_prev, laimaxloc, iloop, inx, inx1, ipft, ireg, mcnt
 
  INTEGER , DIMENSION(5)     :: indx1=(/2,3,5,6,10/)
  INTEGER , DIMENSION(10)    :: indx2=(/4,7,8,9,11,12,13,14,15,16/)
@@ -89,6 +99,7 @@ PROGRAM mkmod
  REAL(r8) :: tree_cover, herb_cover, summ, davg, sumwgt, &
              sumevg, sumnin, frac_c4, sumnon, x1, x2, sum_judg
  INTEGER  :: XY2D(2), XY3D(3), XY4D(4), XY3F(3)
+ INTEGER  :: argn
 
  ! index of 46 8-day's data
  idx(1,:)  = (/ 1,  2,  3,  4,  0/)
@@ -164,8 +175,15 @@ PROGRAM mkmod
  phi   (:,:) = 1.
  laiini(:,:) = 0.
 
- OPEN(11,FILE=REGFILE)
- OPEN(12,FILE=REGFILE)
+ ! get args from command line
+ argn = IARGC()
+ IF (argn > 0) THEN
+    CALL getarg(1, REGFILE)
+    CALL getarg(2, year)
+ ENDIF
+
+ OPEN(11,FILE=trim(REGFILE))
+ OPEN(12,FILE=trim(REGFILE))
 
  DO WHILE(.TRUE.)
 
@@ -331,7 +349,7 @@ PROGRAM mkmod
       ! need to deal with other regions
       ! !!!NOTE: 需要重新run这个程序，使与land cover type保持一致
           ! set NA data to barren
-          IF (lc /= lc) THEN
+          IF (lc == fillvalue_short) THEN
              !lc = 16
              !lcdata(j,i) = 16
              lcdata(j,i) = 0
@@ -1106,7 +1124,7 @@ PROGRAM mkmod
     CALL check( nf90_put_var(ncid, mon_vid, mons  ) )
     ! land cover data
 
-    shortvalue = 255
+    fillvalue_short = 255
     XY2D = (/lon_dimid, lat_dimid/)
     XY3D = (/lon_dimid, lat_dimid, mon_dimid/)
     XY3F = (/lon_dimid, lat_dimid, pft_dimid/)
@@ -1115,7 +1133,7 @@ PROGRAM mkmod
     CALL check( nf90_def_var(ncid, "LC" , NF90_SHORT  , XY2D, lc_id, deflate_level=6) )
     CALL checK( nf90_put_att(ncid, lc_id, "units"     , "-"        ) )
     CALL check( nf90_put_att(ncid, lc_id, "long_name" , "MODIS Land Cover Type (LC_Type1) data product, MCD12Q1 V006") )
-    CALL check( nf90_put_att(ncid, lc_id, "_FillValue", shortvalue ) )
+    CALL check( nf90_put_att(ncid, lc_id, "_FillValue", fillvalue_short ) )
 
     fillvalue = -999.
     CALL check( nf90_def_var(ncid, "MONTHLY_LC_LAI", NF90_FLOAT  , XY3D, clai_id, deflate_level=6) )
@@ -1174,11 +1192,11 @@ PROGRAM mkmod
     CALL checK( nf90_put_att(ncid, ppft_id         , "_FillValue", fillvalue    ) )
 
     ! tree height
-    shortvalue = 255
+    fillvalue_short = 255
     CALL check( nf90_def_var(ncid, "HTOP"          , NF90_SHORT  , XY2D, htop_id, deflate_level=6) )
     CALL check( nf90_put_att(ncid, htop_id         , "units"     , "m"          ) )
     CALL check( nf90_put_att(ncid, htop_id         , "long_name" , "Global forest canopy height") )
-    CALL check( nf90_put_att(ncid, htop_id         , "_FillValue", shortvalue   ) )
+    CALL check( nf90_put_att(ncid, htop_id         , "_FillValue", fillvalue_short   ) )
 
     ! put vars
     CALL check( nf90_inq_varid(ncid, "LC"            , lc_id   ) )

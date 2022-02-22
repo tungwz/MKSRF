@@ -1,1 +1,7 @@
+
+- compile:
 gfortran -o makesurface -fopenmp -g MakeSurfaceData.F90 -I /usr/include/ -lnetcdf -lnetcdff
+
+- run:
+./makesurface
+./makesurface 2005

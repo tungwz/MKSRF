@@ -16,10 +16,10 @@ PROGRAM MakeSurface
 
    INTEGER, parameter :: r8 = selected_real_kind(12)
 
-   CHARACTER (len=*), parameter :: REGFILE = "reg_5x5F.new"
+   CHARACTER (len=*), parameter :: REGFILE = "reg_5x5"
    CHARACTER (len=*), parameter :: DATASRC = "MOD"
-   CHARACTER (len=*), parameter :: SRF_DIR = "/home/yuanhua/hard/mksrf/srf_5x5/"
-   CHARACTER (len=*), parameter :: OUT_DIR = "/home/yuanhua/hard/mksrf/srf_0.5x0.5/"
+   CHARACTER (len=*), parameter :: SRF_DIR = "/home/yuanhua/tera02/mksrf/srf_5x5/"
+   CHARACTER (len=*), parameter :: OUT_DIR = "/home/yuanhua/tera02/mksrf/srf_0.5x0.5/"
 
    CHARACTER (len=*), parameter :: Title   = "Land surface model input vagetation data"
    CHARACTER (len=*), parameter :: Authors = "Yuan et al."
@@ -684,9 +684,9 @@ PROGRAM MakeSurface
    CALL check( nf90_put_att(ncid, lon_vid , "long_name", "Longitude"         ))
    CALL check( nf90_put_att(ncid, lon_vid , "units"    , "degrees_east"      ))
    CALL check( nf90_put_att(ncid, lc_vid  , "long_name", "LC index"          ))
-   CALL check( nf90_put_att(ncid, lc_vid  , "units"    , "LC index"          ))
+   CALL check( nf90_put_att(ncid, lc_vid  , "units"    , "-"                 ))
    CALL check( nf90_put_att(ncid, pft_vid , "long_name", "PFT index"         ))
-   CALL check( nf90_put_att(ncid, pft_vid , "units"    , "PFT index"         ))
+   CALL check( nf90_put_att(ncid, pft_vid , "units"    , "-"                 ))
    CALL check( nf90_put_att(ncid, mon_vid , "long_name", "Month"             ))
    CALL check( nf90_put_att(ncid, mon_vid , "units"    , "month"             ))
 

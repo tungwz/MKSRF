@@ -54,8 +54,7 @@ TMAX_SUF = ".TMAX"
 TMIN_SUF = ".TMIN"
 
 # get regions paras from input file
-reg=read.csv(file="reg_5x5", sep='_', header=F)
-regname=read.csv(file="reg_5x5", header=F)
+reg=read.csv(file="reg_5x5", sep=' ', header=F)
 
 # define resolution
 xydim    = 1200
@@ -73,14 +72,14 @@ tmindata = array(0, c(xydim1, xydim1, length(mons)))
 for (i in 1:dim(reg)[1]) {
 
   cat("\n")
-  print(paste("Start to precess region: ",
-          regname[i,1], sep=""))
+  regname = paste(reg[i,1],reg[i,2],reg[i,3],reg[i,4],sep="_")
+  print(paste("Start to precess region: ", regname, sep=""))
 
   # define dimensions
   dll   = (reg[i,4]-reg[i,2])/xydim
   dll1  = (reg[i,4]-reg[i,2])/xydim1
-  lons  = reg[i,2] + c(1:xydim)*dll - dll/2
-  lats  = reg[i,1] - c(1:xydim)*dll + dll/2
+  lons  = reg[i,2] + c(1:xydim) *dll  - dll/2
+  lats  = reg[i,1] - c(1:xydim) *dll  + dll/2
   lons1 = reg[i,2] + c(1:xydim1)*dll1 - dll1/2
   lats1 = reg[i,1] - c(1:xydim1)*dll1 + dll1/2
 
@@ -156,7 +155,7 @@ for (i in 1:dim(reg)[1]) {
 
   # lai data
   fillvalue <- 255
-  dlname <- "reprocessed MODIS leaf area index produces, MCD15A2H V061"
+  dlname <- "Reprocessed MODIS Version 6.1 leaf area index, MCD15A2H V061"
   lai <- ncvar_def("LAI", "m2/m2",
       list(londim, latdim, daydim),
       fillvalue, dlname, prec="short", compression=6)
@@ -191,7 +190,7 @@ for (i in 1:dim(reg)[1]) {
 
   # create netCDF file
   # --------------------------------------------------
-  filename = paste(RAW_DIR, "RG_", regname[i,1], ".RAW", year, ".nc", sep="")
+  filename = paste(RAW_DIR, "RG_", regname, ".RAW", year, ".nc", sep="")
   cmd = paste("rm -f ", filename, sep="")
   system(cmd)
   ncout <- nc_create(filename,
@@ -204,54 +203,54 @@ for (i in 1:dim(reg)[1]) {
   # --------------------------------------------------
 
   # land cover
-  filename = paste(LC_DIR, 'RG_', regname[i,1], LC_SUF, sep="")
+  filename = paste(LC_DIR, 'RG_', regname, LC_SUF, sep="")
   lcdata   = readBin(filename, integer(), xydim*xydim, size=1, signed=F)
   lcdata   = matrix(lcdata, xydim, xydim)
 
   # vcf data
-  filename = paste(PCTT_DIR, 'RG_', regname[i,1], PCTT_SUF, sep="")
+  filename = paste(PCTT_DIR, 'RG_', regname, PCTT_SUF, sep="")
   pcttdata = readBin(filename, integer(), xydim*xydim, size=1, signed=F)
   pcttdata = matrix(pcttdata, xydim, xydim)
 
-  filename = paste(PCTH_DIR, 'RG_', regname[i,1], PCTH_SUF, sep="")
+  filename = paste(PCTH_DIR, 'RG_', regname, PCTH_SUF, sep="")
   pcthdata = readBin(filename, integer(), xydim*xydim, size=1, signed=F)
   pcthdata = matrix(pcthdata, xydim, xydim)
 
-  filename = paste(PCTB_DIR, 'RG_', regname[i,1], PCTB_SUF, sep="")
+  filename = paste(PCTB_DIR, 'RG_', regname, PCTB_SUF, sep="")
   pctbdata = readBin(filename, integer(), xydim*xydim, size=1, signed=F)
   pctbdata = matrix(pctbdata, xydim, xydim)
 
   # tree top data
-  filename = paste(HTOP_DIR, 'RG_', regname[i,1], HTOP_SUF, sep="")
+  filename = paste(HTOP_DIR, 'RG_', regname, HTOP_SUF, sep="")
   htopdata = readBin(filename, integer(), xydim1*xydim1, size=1, signed=F)
   htopdata = matrix(htopdata, xydim1, xydim1)
 
   # avhrr data
-  filename = paste(BT_DIR, 'RG_', regname[i,1], BT_SUF, sep="")
+  filename = paste(BT_DIR, 'RG_', regname, BT_SUF, sep="")
   btdata   = readBin(filename, integer(), xydim1*xydim1, size=1, signed=F)
   btdata   = matrix(btdata, xydim1, xydim1)
 
-  filename = paste(NT_DIR, 'RG_', regname[i,1], NT_SUF, sep="")
+  filename = paste(NT_DIR, 'RG_', regname, NT_SUF, sep="")
   ntdata   = readBin(filename, integer(), xydim1*xydim1, size=1, signed=F)
   ntdata   = matrix(ntdata, xydim1, xydim1)
 
-  filename = paste(ET_DIR, 'RG_', regname[i,1], ET_SUF, sep="")
+  filename = paste(ET_DIR, 'RG_', regname, ET_SUF, sep="")
   etdata   = readBin(filename, integer(), xydim1*xydim1, size=1, signed=F)
   etdata   = matrix(etdata, xydim1, xydim1)
 
-  filename = paste(DT_DIR, 'RG_', regname[i,1], DT_SUF, sep="")
+  filename = paste(DT_DIR, 'RG_', regname, DT_SUF, sep="")
   dtdata   = readBin(filename, integer(), xydim1*xydim1, size=1, signed=F)
   dtdata   = matrix(dtdata, xydim1, xydim1)
 
   # kg data
-  filename = paste(KG_DIR, 'RG_', regname[i,1], KG_SUF, sep="")
+  filename = paste(KG_DIR, 'RG_', regname, KG_SUF, sep="")
   ncfile   = nc_open(filename)
   kgdata   = ncvar_get(ncfile, "zonecode")
   nc_close(ncfile)
 
   # lai data
   for (iday in 1:length(days)) {
-    filename = paste(LAI_DIR, 'RG_', regname[i,1], LAI_SUF, sprintf("%0.3d", (iday-1)*8+1), sep="")
+    filename = paste(LAI_DIR, 'RG_', regname, LAI_SUF, sprintf("%0.3d", (iday-1)*8+1), sep="")
     tmpdata  = readBin(filename, integer(), xydim*xydim, size=1, signed=F)
     tmpdata  = matrix(tmpdata, xydim, xydim)
     laidata[,,iday] = tmpdata
@@ -259,7 +258,7 @@ for (i in 1:dim(reg)[1]) {
 
   # wc data
   for (imon in 1:length(mons)) {
-    filename = paste(PREC_DIR, 'RG_', regname[i,1], PREC_SUF, sprintf("%0.2d", imon), ".nc", sep="")
+    filename = paste(PREC_DIR, 'RG_', regname, PREC_SUF, sprintf("%0.2d", imon), ".nc", sep="")
     ncfile   = nc_open(filename)
     tmpdata  = ncvar_get(ncfile, "prec")
     precdata[,,imon] = tmpdata
@@ -267,7 +266,7 @@ for (i in 1:dim(reg)[1]) {
   }
 
   for (imon in 1:length(mons)) {
-    filename = paste(TAVG_DIR, 'RG_', regname[i,1], TAVG_SUF, sprintf("%0.2d", imon), ".nc", sep="")
+    filename = paste(TAVG_DIR, 'RG_', regname, TAVG_SUF, sprintf("%0.2d", imon), ".nc", sep="")
     ncfile   = nc_open(filename)
     tmpdata  = ncvar_get(ncfile, "tavg")
     tavgdata[,,imon] = tmpdata
@@ -275,7 +274,7 @@ for (i in 1:dim(reg)[1]) {
   }
 
   for (imon in 1:length(mons)) {
-    filename = paste(TMAX_DIR, 'RG_', regname[i,1], TMAX_SUF, sprintf("%0.2d", imon), ".nc", sep="")
+    filename = paste(TMAX_DIR, 'RG_', regname, TMAX_SUF, sprintf("%0.2d", imon), ".nc", sep="")
     ncfile   = nc_open(filename)
     tmpdata  = ncvar_get(ncfile, "tmax")
     tmaxdata[,,imon] = tmpdata
@@ -283,7 +282,7 @@ for (i in 1:dim(reg)[1]) {
   }
 
   for (imon in 1:length(mons)) {
-    filename = paste(TMIN_DIR, 'RG_', regname[i,1], TMIN_SUF, sprintf("%0.2d", imon), ".nc", sep="")
+    filename = paste(TMIN_DIR, 'RG_', regname, TMIN_SUF, sprintf("%0.2d", imon), ".nc", sep="")
     ncfile   = nc_open(filename)
     tmpdata  = ncvar_get(ncfile, "tmin")
     tmindata[,,imon] = tmpdata

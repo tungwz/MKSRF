@@ -3,7 +3,7 @@
 import os
 import numpy
 
-reg = numpy.loadtxt('reg_5x5', delimiter='_')
+reg = numpy.loadtxt('reg_5x5')
 cnt = 1
 
 for i in reg:

@@ -1,2 +1,0 @@
-gfortran -g -mcmodel=large -fbounds-check -o mkmod mkmod.F90 -I$Inc -L$Lib -lnetcdf -lnetcdff
-gfortran -g -mcmodel=large -fbounds-check -fopenmp -o mkmod mkmod.F90 -I$Inc -L$Lib -lnetcdf -lnetcdff

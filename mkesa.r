@@ -118,15 +118,16 @@ CCI_DIR  = paste(ROOT_DIR, "cci_5x5/", sep="")
 SRF_DIR  = paste(ROOT_DIR, "srf_5x5/", sep="")
 
 # get regions paras from input file
-reg=read.csv(file=REGFILE, sep='_', header=F)
-regname=read.csv(file=REGFILE, header=F)
+reg=read.csv(file="reg_5x5", sep=' ', header=F)
 
 # process the regions one by one
 for (ireg in 1:dim(reg)[1]) {
 
-  filename = paste(RAW_DIR, 'RG_', regname[ireg,1], ".RAW", year, ".nc", sep="")
+  regname  = paste(reg[i,1],reg[i,2],reg[i,3],reg[i,4],sep="_")
+
+  filename = paste(RAW_DIR, 'RG_', regname, ".RAW", year, ".nc", sep="")
   fraw     = nc_open(filename)
-  filename = paste(CCI_DIR, 'RG_', regname[ireg,1], ".CCI", year, ".nc", sep="")
+  filename = paste(CCI_DIR, 'RG_', regname, ".CCI", year, ".nc", sep="")
   fcci     = nc_open(filename)
 
   # get raw data
@@ -170,9 +171,21 @@ for (ireg in 1:dim(reg)[1]) {
   sidata [is.na(sidata) ] = 0.
   uadata [is.na(uadata) ] = 0.
 
+  # initialization
+  lclai   [,,]  = 0.
+  lcsai   [,,]  = 0.
+  pftlai  [,,,] = 0.
+  pftsai  [,,,] = 0.
+  pcrop   [,]   = 0.
+  purban  [,]   = 0.
+  pwetland[,]   = 0.
+  pice    [,]   = 0.
+  pwater  [,]   = 0.
+  pocean  [,]   = 0.
+  ppft    [,,]  = 0.
+
   cat("\n")
-  print(paste("Start to precess region: ",
-          regname[ireg,1], sep=""))
+  print(paste("Start to precess region: ", regname, sep=""))
 
   # loop for each small 500m grid
   for (i in 1:xydim) {
@@ -182,15 +195,27 @@ for (ireg in 1:dim(reg)[1]) {
       #for (i in 8:8) {
       #for (j in 714:714) {
 
-      # get data
-      # ------------------------------
-      lc   = lcdata[j, i]
-      lai  = laidata[j, i, ] * 0.1
-
       # NOTE: 1Km, 600 x 600
       j1   = floor((j+1)/2)
       i1   = floor((i+1)/2)
-      kg   = kgdata[j1, i1]
+
+      # set land cover type
+      # ------------------------------
+      lc = lcdata[j, i]
+      lc = trunc(lc/10)
+
+      # set no-data to barren
+      if (lc == 0) {lc = 20}
+      lcdata[j,i] = lc
+
+      kg = kgdata[j1, i1]
+      if (kg == 0) {   # ocean case
+        lcdata[j,i] = 0
+        pocean[j,i] = 100
+        next
+      }
+
+      lai  = laidata[j, i, ] * 0.1
       prec = precdata[j1, i1, ]
       tavg = tavgdata[j1, i1, ]
       tmax = tmaxdata[j1, i1, ]
@@ -210,32 +235,6 @@ for (ireg in 1:dim(reg)[1]) {
       wt   = wtdata [j,i]*100
       si   = sidata [j,i]*100
       ua   = uadata [j,i]*100
-
-      # initialization
-      lclai   [j,i,]  = 0.
-      lcsai   [j,i,]  = 0.
-      pftlai  [j,i,,] = 0.
-      pftsai  [j,i,,] = 0.
-      pcrop   [j,i]   = 0.
-      purban  [j,i]   = 0.
-      pwetland[j,i]   = 0.
-      pice    [j,i]   = 0.
-      pwater  [j,i]   = 0.
-      pocean  [j,i]   = 0.
-      ppft    [j,i,]  = 0.
-
-      # set land cover type
-      lc = trunc(lc/10)
-
-      # set no-data to barren
-      if (lc == 0) {lc = 20}
-      lcdata[j,i] = lc
-
-      if (kg == 0) {   # ocean case
-        lcdata[j,i] = 0
-        pocean[j,i] = 100
-        next
-      }
 
       # set PFT... fraction
       # ------------------------------
@@ -760,7 +759,7 @@ for (ireg in 1:dim(reg)[1]) {
 
   # create netCDF file
   # --------------------------------------------------
-  filename = paste(SRF_DIR, "RG_", regname[ireg,1], ".ESA", year, ".nc", sep="")
+  filename = paste(SRF_DIR, "RG_", regname, ".ESA", year, ".nc", sep="")
   print(filename)
   cmd = paste("rm -f ", filename, sep="")
   system(cmd)

@@ -4,7 +4,7 @@ import numpy
 import os
 import sys
 
-reg = numpy.loadtxt('reg_5x5', delimiter='_')
+reg = numpy.loadtxt('reg_5x5')
 cnt = 1
 year = sys.argv[1]
 

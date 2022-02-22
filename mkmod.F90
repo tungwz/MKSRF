@@ -331,9 +331,10 @@ PROGRAM mkmod
       ! need to deal with other regions
       ! !!!NOTE: 需要重新run这个程序，使与land cover type保持一致
           ! set NA data to barren
-          IF (lc /= lc) THEN
+          IF (lc == 255) THEN ! 修改缺省值bug
              !lc = 16
              !lcdata(j,i) = 16
+             PRINT*, 'Fill value of LC'
              lcdata(j,i) = 0
              pocean(j,i) = 100.
              CYCLE
@@ -417,7 +418,11 @@ PROGRAM mkmod
 
           summ = pctt+pcth+pctb
 
-          IF ( summ/=summ .or. summ==0) THEN  ! check NAN value of fortran
+          IF (pctt==253 .or. pcth==253 .or. pctb==253) THEN  ! 检查pctt/pcth/pctb是否有缺省值(253s)
+             PRINT*, pctt, pcth, pctb
+             tree_cover = tbe + tbd + tne + tnd + ua*0.05
+             herb_cover = sbe + sbd + sne + ng  + mg + ua*0.15
+          ELSE IF (summ == 0) THEN
              tree_cover = tbe + tbd + tne + tnd + ua*0.05
              herb_cover = sbe + sbd + sne + ng  + mg + ua*0.15
           ELSE
@@ -672,7 +677,7 @@ PROGRAM mkmod
           ! calculate GDD and phi
           phi(:,:) = 1.
 
-          IF (all(tavg==-3.4e+38)) THEN
+          IF (any(tavg==-3.4e+38)) THEN  ! 修改缺省值bug (all(tavg==-3.4e+38)-->any(tavg==-3.4e+38))
              ! when T and P are missing
              PRINT*, 'NA temperature! Error!'
           ELSE

@@ -197,6 +197,8 @@ for (ireg in 1:dim(reg)[1]) {
   pice    [,]   = 0.
   pwater  [,]   = 0.
   pocean  [,]   = 0.
+  # yuan, 2/26/2022: not initialized
+  htop500 [,]   = 0.
   ppft    [,,]  = 0.
 
   cat("\n")
@@ -909,7 +911,7 @@ for (ireg in 1:dim(reg)[1]) {
   # land cover data
   fillvalue <- 255
   dlname <- "MODIS Land Cover Type (LC_Type1) data product, MCD12Q1 V006"
-  modis_igbp <- ncvar_def("LC", "-",
+  modis_igbp <- ncvar_def("LC", "",
       list(londim, latdim),
       fillvalue, dlname, prec="short", compression=6)
 

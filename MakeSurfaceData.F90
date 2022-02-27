@@ -692,9 +692,7 @@ PROGRAM MakeSurface
    CALL check( nf90_put_att(ncid, lon_vid , "long_name", "Longitude"         ))
    CALL check( nf90_put_att(ncid, lon_vid , "units"    , "degrees_east"      ))
    CALL check( nf90_put_att(ncid, lc_vid  , "long_name", "LC index"          ))
-   CALL check( nf90_put_att(ncid, lc_vid  , "units"    , "-"                 ))
    CALL check( nf90_put_att(ncid, pft_vid , "long_name", "PFT index"         ))
-   CALL check( nf90_put_att(ncid, pft_vid , "units"    , "-"                 ))
    CALL check( nf90_put_att(ncid, mon_vid , "long_name", "Month"             ))
    CALL check( nf90_put_att(ncid, mon_vid , "units"    , "month"             ))
 

@@ -96,7 +96,7 @@ for (i in 1:dim(reg)[1]) {
   # land cover data
   fillvalue <- 255
   dlname <- "MODIS Land Cover Type (LC_Type1) data product, MCD12Q1 V006"
-  lc <- ncvar_def("LC", "-",
+  lc <- ncvar_def("LC", "",
       list(londim, latdim),
       fillvalue, dlname, prec="short", compression=6)
 
@@ -149,7 +149,7 @@ for (i in 1:dim(reg)[1]) {
   # Köppen-Geiger data
   fillvalue <- 256
   dlname <- "Present Köppen-Geiger climate classification maps at 1-km resolution"
-  kg <- ncvar_def("KG", "-",
+  kg <- ncvar_def("KG", "",
       list(londim1, latdim1),
       fillvalue, dlname, prec="short", compression=6)
 

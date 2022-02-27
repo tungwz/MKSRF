@@ -62,7 +62,7 @@ PROGRAM mkmod
  INTEGER        , DIMENSION(4)            :: reg
  INTEGER(kind=2), DIMENSION(1200,1200)    :: lcdata, htop500
  REAL(r8)       , DIMENSION(1200,1200)    :: pcttdata, pcthdata, pctbdata
- REAL(r8)       , DIMENSION(600 , 600)    :: btdata, ntdata, etdata, &
+ REAL(r8)       , DIMENSION(600 ,600 )    :: btdata, ntdata, etdata, &
                                              kgdata, dtdata, htopdata
  REAL(r8)       , DIMENSION(1200,1200,46) :: laidata
  REAL(r8)       , DIMENSION(600,600,12)   :: precdata, tavgdata, tmaxdata, &
@@ -80,7 +80,7 @@ PROGRAM mkmod
             psai_id, slai_id, urbn_id, watr_id, wetl_id
 
  ! vars
- INTEGER(kind=2) :: fillvalue_short
+ INTEGER(kind=2) :: fillvalue_short = 255
  INTEGER         :: loc1(1), loc2(1)
  INTEGER         :: i, j, i1, j1, imonth, itmin, nextmonth, prevmonth, &
                     imonth_prev, laimaxloc, iloop, inx, inx1, ipft, ireg, mcnt
@@ -93,8 +93,8 @@ PROGRAM mkmod
                                rgdd2, rgdd5, tmax, tmin, tavg, prec
  REAL(r8), DIMENSION(16,12) :: saiini, saiini1, laidiff
 
- REAL(r8) :: lc, pctt, pcth, pctb, bt, nt, et, dt, kg, &
-             tbe, tbd, tne, tnd, sbe, sbd, sne, ng, mg, ua
+ INTEGER  :: lc, pctt, pcth, pctb, bt, nt, et, dt, kg
+ REAL(r8) :: tbe, tbd, tne, tnd, sbe, sbd, sne, ng, mg, ua
  REAL(r8) :: bdt, bet, dll, laitot_nonevg, laiup, ndt, net
  REAL(r8) :: tree_cover, herb_cover, summ, davg, sumwgt, &
              sumevg, sumnin, frac_c4, sumnon, x1, x2, sum_judg
@@ -297,9 +297,9 @@ PROGRAM mkmod
     WHERE(sbedata /= sbedata) sbedata=0.
     WHERE(sbddata /= sbddata) sbddata=0.
     WHERE(snedata /= snedata) snedata=0.
-    WHERE(ngdata  /= ngdata)  ngdata =0.
-    WHERE(mgdata  /= mgdata)  mgdata =0.
-    WHERE(uadata  /= uadata)  uadata =0.
+    WHERE(ngdata  /= ngdata ) ngdata =0.
+    WHERE(mgdata  /= mgdata ) mgdata =0.
+    WHERE(uadata  /= uadata ) uadata =0.
 
     ! initialization
     pcrop   (:,:) = 0
@@ -308,6 +308,8 @@ PROGRAM mkmod
     pice    (:,:) = 0
     pwater  (:,:) = 0
     pocean  (:,:) = 0
+! yuan, 2/26/2022: not initialized
+    htop500 (:,:) = 0
 
     ppft (:,:,:)  = 0
     lclai(:,:,:)  = 0
@@ -435,12 +437,15 @@ PROGRAM mkmod
 
           summ = pctt+pcth+pctb
 
-          IF ( summ/=summ .or. summ==0) THEN  ! check NAN value of fortran
+          IF (pctt==253 .or. pcth==253 .or. pctb==253) THEN  ! 检查pctt/pcth/pctb是否有缺省值(253s)
+             tree_cover = tbe + tbd + tne + tnd + ua*0.05
+             herb_cover = sbe + sbd + sne + ng  + mg + ua*0.15
+          ELSE IF (summ < 1e-6) THEN
              tree_cover = tbe + tbd + tne + tnd + ua*0.05
              herb_cover = sbe + sbd + sne + ng  + mg + ua*0.15
           ELSE
-             tree_cover = pctt/0.8
-             herb_cover = pcth/0.8
+             tree_cover = pctt/0.8_r8
+             herb_cover = pcth/0.8_r8
 
              summ = tree_cover+herb_cover
              IF (summ > 100) THEN
@@ -449,7 +454,7 @@ PROGRAM mkmod
              ENDIF
           ENDIF
 
-          IF (tree_cover+herb_cover == 0) THEN
+          IF (tree_cover+herb_cover < 1e-6) THEN
              ppft (j,i,1) = 100.
              pcrop(j,i)   = 0.
              CYCLE
@@ -459,7 +464,7 @@ PROGRAM mkmod
           ppft(j,i,1) = max(0., (100-tree_cover-herb_cover))
 
           ! split tree
-          IF ( tree_cover > 0.) THEN   ! check for end
+          IF (tree_cover > 0.) THEN   ! check for end
              ! tropical
              IF (kg<=4 .or. kg==6) THEN
                 ! assumed no ndt here
@@ -690,7 +695,7 @@ PROGRAM mkmod
           ! calculate GDD and phi
           phi(:,:) = 1.
 
-          IF (all(tavg==-3.4e+38)) THEN
+          IF (any(tavg<-3.4e+2)) THEN  ! 修改缺省值bug (all(tavg==-3.4e+38)-->any(tavg==-3.4e+38))
              ! when T and P are missing
              PRINT*, 'NA temperature! Error!'
           ELSE
@@ -763,7 +768,7 @@ PROGRAM mkmod
           ! split the tmin month gdd into 2 parts
           ! gdd, rgdd
 
-          IF (dd2(itmin) == 0) THEN
+          IF (dd2(itmin) < 1e-6) THEN
              gdd2 (itmin) = 0.
              rgdd2(itmin) = 0.
           ELSE
@@ -788,7 +793,7 @@ PROGRAM mkmod
              ENDIF
           ENDIF
 
-          IF (dd5(itmin) == 0) THEN
+          IF (dd5(itmin) < 1e-6) THEN
              gdd5 (itmin) = 0.
              rgdd5(itmin) = 0.
           ELSE
@@ -1048,6 +1053,9 @@ PROGRAM mkmod
           IF (abs(sum(pctpft)-1.) > 1e-5) THEN
              PRINT*, pctpft
              PRINT*, abs(sum(pctpft)-1.)
+             PRINT*, i, j
+             PRINT*, lc, pctt, pcth, pctb, bt, nt, et, dt, kg
+             PRINT*, tbe, tbd, tne, tnd, sbe, sbd, sne, ng, mg, ua
              PRINT*, 'Sum of area is not equle to 100%! STOP!'
              STOP
           ENDIF
@@ -1114,7 +1122,6 @@ PROGRAM mkmod
     CALL check( nf90_put_att(ncid, lon_vid, "long_name", "Longitude"    ) )
     CALL check( nf90_put_att(ncid, lon_vid, "units"    , "degrees_east" ) )
     CALL check( nf90_put_att(ncid, pft_vid, "long_name", "Index of PFT" ) )
-    CALL check( nf90_put_att(ncid, pft_vid, "units"    , "-"            ) )
     CALL check( nf90_put_att(ncid, mon_vid, "long_name", "Month of year") )
     CALL checK( nf90_put_att(ncid, mon_vid, "units"    , "month"        ) )
 
@@ -1124,14 +1131,12 @@ PROGRAM mkmod
     CALL check( nf90_put_var(ncid, mon_vid, mons  ) )
     ! land cover data
 
-    fillvalue_short = 255
     XY2D = (/lon_dimid, lat_dimid/)
     XY3D = (/lon_dimid, lat_dimid, mon_dimid/)
     XY3F = (/lon_dimid, lat_dimid, pft_dimid/)
     XY4D = (/lon_dimid, lat_dimid, pft_dimid, mon_dimid/)
 
     CALL check( nf90_def_var(ncid, "LC" , NF90_SHORT  , XY2D, lc_id, deflate_level=6) )
-    CALL checK( nf90_put_att(ncid, lc_id, "units"     , "-"        ) )
     CALL check( nf90_put_att(ncid, lc_id, "long_name" , "MODIS Land Cover Type (LC_Type1) data product, MCD12Q1 V006") )
     CALL check( nf90_put_att(ncid, lc_id, "_FillValue", fillvalue_short ) )
 
@@ -1192,7 +1197,6 @@ PROGRAM mkmod
     CALL checK( nf90_put_att(ncid, ppft_id         , "_FillValue", fillvalue    ) )
 
     ! tree height
-    fillvalue_short = 255
     CALL check( nf90_def_var(ncid, "HTOP"          , NF90_SHORT  , XY2D, htop_id, deflate_level=6) )
     CALL check( nf90_put_att(ncid, htop_id         , "units"     , "m"          ) )
     CALL check( nf90_put_att(ncid, htop_id         , "long_name" , "Global forest canopy height") )

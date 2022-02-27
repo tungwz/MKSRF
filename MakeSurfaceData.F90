@@ -20,6 +20,7 @@ PROGRAM MakeSurface
    CHARACTER (len=*), parameter :: DATASRC = "MOD"
    CHARACTER (len=*), parameter :: SRF_DIR = "/home/yuanhua/tera02/mksrf/srf_5x5/"
    CHARACTER (len=*), parameter :: OUT_DIR = "/home/yuanhua/tera02/mksrf/srf_0.5x0.5/"
+   CHARACTER (len=4)            :: year    = "2005"
 
    CHARACTER (len=*), parameter :: Title   = "Land surface model input vagetation data"
    CHARACTER (len=*), parameter :: Authors = "Yuan et al."
@@ -106,6 +107,7 @@ PROGRAM MakeSurface
    INTEGER :: URBAN, WETLAND, CROP, WATER, GLACIER
 
    INTEGER :: XY2D(2), GRID3d(3), LC3D(3), PFT3D(3), LC4D(4), PFT4D(4), ePFT4D(4), ePFT5D(5)
+   INTEGER :: argn
 
    pi = 4.*atan(1.)
    deg2rad = pi/180.
@@ -203,6 +205,12 @@ PROGRAM MakeSurface
    pct_epft(:,:,:,:)   = 0.
    area(:,:)           = 0.
 
+   ! get args from command line
+   argn = IARGC()
+   IF (argn > 0) THEN
+      CALL getarg(1, year)
+   ENDIF
+
    ! open the region file
    open(unit=11, file=REGFILE, form='formatted', status='old', action='read')
 
@@ -225,9 +233,9 @@ PROGRAM MakeSurface
          //trim(adjustL(reg2))//'_' &
          //trim(adjustL(reg3))//'_' &
          //trim(adjustL(reg4))//'.' &
-         //DATASRC//'2005.nc'
+         //DATASRC//trim(year)//'.nc'
 
-      print *,"*** Processing file ", trim(FILE_NAME), "..."
+      print *,">>> Processing file ", trim(FILE_NAME), "..."
       CALL check( nf90_open(trim(FILE_NAME), nf90_nowrite, ncid) )
 
       ! get the raw data
@@ -660,7 +668,7 @@ PROGRAM MakeSurface
    ENDDO
 
    ! create NC file
-   FILE_NAME = OUT_DIR//'global_0.5x0.5.'//DATASRC//"2005_V4.5.nc"
+   FILE_NAME = OUT_DIR//'global_0.5x0.5.'//DATASRC//trim(year)//"_V4.5.nc"
 
    CALL check( nf90_create(FILE_NAME, NF90_NETCDF4, ncid) )
 
@@ -684,9 +692,7 @@ PROGRAM MakeSurface
    CALL check( nf90_put_att(ncid, lon_vid , "long_name", "Longitude"         ))
    CALL check( nf90_put_att(ncid, lon_vid , "units"    , "degrees_east"      ))
    CALL check( nf90_put_att(ncid, lc_vid  , "long_name", "LC index"          ))
-   CALL check( nf90_put_att(ncid, lc_vid  , "units"    , "-"                 ))
    CALL check( nf90_put_att(ncid, pft_vid , "long_name", "PFT index"         ))
-   CALL check( nf90_put_att(ncid, pft_vid , "units"    , "-"                 ))
    CALL check( nf90_put_att(ncid, mon_vid , "long_name", "Month"             ))
    CALL check( nf90_put_att(ncid, mon_vid , "units"    , "month"             ))
 

@@ -1,2 +1,8 @@
+
+- compile:
 gfortran -g -mcmodel=large -fbounds-check -o mkmod mkmod.F90 -I/usr/include -lnetcdf -lnetcdff
 gfortran -g -mcmodel=large -fbounds-check -fopenmp -o mkmod_omp mkmod_omp.F90 -I/usr/include -lnetcdf -lnetcdff
+
+- run:
+./mkmod
+./mkmod reg_5x5 2005

@@ -23,24 +23,23 @@ PROGRAM mkmod
  CHARACTER (len=*), PARAMETER :: Authors = "Yuan et al."
  CHARACTER (len=*), PARAMETER :: Address = "School of Atmospheric Sciences, Sun Yat-sen University, Guangzhou, China"
  CHARACTER (len=*), PARAMETER :: Email   = "yuanh25@mail.sysu.edu.cn"
+ 
+ INTEGER , DIMENSION(12, 5) :: idx, wgt
+ INTEGER , DIMENSION(46)    :: days
+ INTEGER , DIMENSION(12)    :: mons, dom 
+ INTEGER , DIMENSION(16)    :: pftnum
 
- INTEGER , DIMENSION(12,5) :: idx, wgt
- INTEGER , DIMENSION(46)   :: days
- INTEGER , DIMENSION(12)   :: mons, dom
- INTEGER , DIMENSION(16)   :: pftnum
+ REAL(r8), DIMENSION(12)    :: phimin  !=0.5                        
+ REAL(r8), DIMENSION(16)    :: laimax, tbcase, sgdd, &
+                               minfr, saimin, sairtn, saimin1, saires, &
+                               pctpft, laiinimax
+ REAL(r8), DIMENSION(16,12) :: phi, laiini, laiini1, saiini2
 
- REAL(r8), DIMENSION(12)   :: phimin  !=0.5
- REAL(r8), DIMENSION(16)   :: laimax, tbcase, sgdd, &
-                              minfr, saimin, sairtn, saimin1, saires, &
-                              pctpft, laiinimax
- REAL(r8), DIMENSION(16,12):: phi, laiini, laiini1, saiini2
-
- REAL(r8), DIMENSION(1200) :: lats, lons
-
+ ! output data
+ REAL(r8), DIMENSION(1200)            :: lats, lons
+ 
  REAL(r8), DIMENSION(1200,1200)       :: pcrop, purban, pwetland, &
-                                         pice, pwater, pocean, tbedata, &
-                                         tbddata, tnedata, tnddata, sbedata, sbddata, ngdata, &
-                                         mgdata, uadata, snedata
+                                         pice, pwater, pocean
  REAL(r8), DIMENSION(1200,1200,12)    :: lclai, lcsai
  REAL(r8), DIMENSION(1200,1200,16)    :: ppft
  REAL(r8), DIMENSION(1200,1200,16,12) :: pftlai, pftsai
@@ -60,13 +59,19 @@ PROGRAM mkmod
 
  ! input vars
  INTEGER        , DIMENSION(4)            :: reg
+ ! RAW data
  INTEGER(kind=2), DIMENSION(1200,1200)    :: lcdata, htop500
- REAL(r8)       , DIMENSION(1200,1200)    :: pcttdata, pcthdata, pctbdata
- REAL(r8)       , DIMENSION(600 ,600 )    :: btdata, ntdata, etdata, &
+ INTEGER(kind=2), DIMENSION(1200,1200)    :: pcttdata, pcthdata, pctbdata
+ INTEGER(kind=2), DIMENSION(600 , 600)    :: btdata, ntdata, etdata, &
                                              kgdata, dtdata, htopdata
- REAL(r8)       , DIMENSION(1200,1200,46) :: laidata
- REAL(r8)       , DIMENSION(600,600,12)   :: precdata, tavgdata, tmaxdata, &
+ INTEGER(kind=2), DIMENSION(1200,1200,46) :: laidata
+ INTEGER(kind=2), DIMENSION(600 ,600 ,12) :: precdata
+ REAL(r8)       , DIMENSION(600 ,600 ,12) :: tavgdata, tmaxdata, &
                                              tmindata
+ ! CCI data
+ REAL(r8)       , DIMENSION(1200,1200)    :: tbedata, &
+                                             tbddata, tnedata, tnddata, sbedata, sbddata, ngdata, &
+                                             mgdata, uadata, snedata
 
  ! input vars id
  INTEGER :: ncid, lcid, pcttid, pcthid, pctbid, btid, ntid, &
@@ -77,8 +82,8 @@ PROGRAM mkmod
  INTEGER :: clai_id, crop_id, csai_id, dims, gice_id, htop_id, &
             lat_dimid, lat_vid, lc_id, lon_dimid, lon_vid, mon_dimid, &
             mon_vid, ocea_id, pft_dimid, pft_vid, plai_id, ppft_id, &
-            psai_id, slai_id, urbn_id, watr_id, wetl_id
-
+            psai_id, slai_id, urbn_id, watr_id, wetl_id               
+ 
  ! vars
  INTEGER(kind=2) :: fillvalue_short = 255
  INTEGER         :: loc1(1), loc2(1)
@@ -90,14 +95,18 @@ PROGRAM mkmod
  REAL                       :: fillvalue
  REAL(r8), DIMENSION(46)    :: lai
  REAL(r8), DIMENSION(12)    :: laitot, dd2, dd5, gdd2, gdd5, &
-                               rgdd2, rgdd5, tmax, tmin, tavg, prec
- REAL(r8), DIMENSION(16,12) :: saiini, saiini1, laidiff
-
- INTEGER  :: lc, pctt, pcth, pctb, bt, nt, et, dt, kg
+                               rgdd2, rgdd5, tmax, tmin, tavg
+ REAL(r8), DIMENSION(16,12) :: saiini, saiini1, laidiff 
+ 
+ ! short data
+ INTEGER(kind=2)                :: lc, pctt, pcth, pctb, bt, nt, et, dt, kg
+ INTEGER(kind=2), DIMENSION(12) :: prec
+ 
  REAL(r8) :: tbe, tbd, tne, tnd, sbe, sbd, sne, ng, mg, ua
  REAL(r8) :: bdt, bet, dll, laitot_nonevg, laiup, ndt, net
  REAL(r8) :: tree_cover, herb_cover, summ, davg, sumwgt, &
              sumevg, sumnin, frac_c4, sumnon, x1, x2, sum_judg
+
  INTEGER  :: XY2D(2), XY3D(3), XY4D(4), XY3F(3)
  INTEGER  :: argn
 
@@ -160,7 +169,7 @@ PROGRAM mkmod
              "c3_non-arctic_grass                     ", &
              "c4_grass                                ", &
              "c3_crop                                 "/)
-
+ 
  ! values in the table below are from Lawrence et al., 2007
  ! with modifications according to Sitch et al., 2003
  laimax = (/0, 5, 5, 5, 7, 7, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4/)
@@ -170,7 +179,7 @@ PROGRAM mkmod
  saimin = (/0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.1/)
  sairtn = (/0., 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, &
             0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0./)
-
+ 
  phimin(:)   = 0.5
  phi   (:,:) = 1.
  laiini(:,:) = 0.
@@ -191,11 +200,11 @@ PROGRAM mkmod
     READ(12,*,END=101) creg
     filename = TRIM(ROOT_DIR)//TRIM(RAW_DIR)//'RG_'//TRIM(creg(1))//'_'//&
                TRIM(creg(2))//'_'//TRIM(creg(3))//'_'//TRIM(creg(4))//'.RAW'//TRIM(year)//'.nc'
-
+    
     PRINT*, filename
 
     CALL check( nf90_open(TRIM(filename), nf90_nowrite, ncid) )
-
+    
     ! get raw data
     CALL check( nf90_inq_varid(ncid, 'LC'  , lcid    ) )
     CALL check( nf90_get_var  (ncid, lcid  , lcdata  ) )
@@ -217,19 +226,19 @@ PROGRAM mkmod
 
     CALL check( nf90_inq_varid(ncid, 'ET'  , etid    ) )
     CALL check( nf90_get_var  (ncid, etid  , etdata  ) )
-
+    
     CALL check( nf90_inq_varid(ncid, 'DT'  , dtid    ) )
     CALL check( nf90_get_var  (ncid, dtid  , dtdata  ) )
-
+    
     CALL check( nf90_inq_varid(ncid, 'KG'  , kgid    ) )
     CALL check( nf90_get_var  (ncid, kgid  , kgdata  ) )
-
+    
     CALL check( nf90_inq_varid(ncid, 'LAI' , laiid   ) )
     CALL check( nf90_get_var  (ncid, laiid , laidata ) )
 
     CALL check( nf90_inq_varid(ncid, 'PREC', precid  ) )
     CALL check( nf90_get_var  (ncid, precid, precdata) )
-
+    
     CALL check( nf90_inq_varid(ncid, 'TAVG', tavgid  ) )
     CALL check( nf90_get_var  (ncid, tavgid, tavgdata) )
 
@@ -276,7 +285,7 @@ PROGRAM mkmod
 
     CALL check( nf90_inq_varid(ncid, 'Natural_Grass'             , ngid   ) )
     CALL check( nf90_get_var  (ncid, ngid                        , ngdata ) )
-
+    
     CALL check( nf90_inq_varid(ncid, 'Managed_Grass'             , mgid   ) )
     CALL check( nf90_get_var  (ncid, mgid                        , mgdata ) )
 
@@ -289,7 +298,7 @@ PROGRAM mkmod
     !!!!!!!!!!
     !149-158
     !!!!!!!!!!
-    ! convert nan value to 0
+    ! convert nan value to 0 
     WHERE(tbedata /= tbedata) tbedata=0.
     WHERE(tbddata /= tbddata) tbddata=0.
     WHERE(tnedata /= tnedata) tnedata=0.
@@ -358,7 +367,9 @@ PROGRAM mkmod
              pocean(j,i) = 100.
              CYCLE
           ENDIF
-
+          
+          ! 由于lc定义类型错误导致不会进入这个CYCLE，因此lc在以下地区数据处理错误
+          ! 解决办法：更改lc为short
           IF (lc == 11) THEN
              pwetland(j,i) = 100.
           ELSE IF (lc == 12) THEN
@@ -370,7 +381,7 @@ PROGRAM mkmod
           ELSE IF (lc == 15) THEN
              pice (j,i) = 100.
              CYCLE
-          ELSE IF (lc == 17) THEN
+          ELSE IF (lc == 17) THEN   
              pwater(j,i) = 100.
              CYCLE
           ENDIF
@@ -436,7 +447,6 @@ PROGRAM mkmod
           herb_cover = 0
 
           summ = pctt+pcth+pctb
-
           IF (pctt==253 .or. pcth==253 .or. pctb==253) THEN  ! 检查pctt/pcth/pctb是否有缺省值(253s)
              tree_cover = tbe + tbd + tne + tnd + ua*0.05
              herb_cover = sbe + sbd + sne + ng  + mg + ua*0.15
@@ -501,7 +511,7 @@ PROGRAM mkmod
              ! temperature
              ! assume no ndt
                 IF (dt<=bt .and. nt<=et) THEN
-                   bdt = dt
+                   bdt = dt 
                    net = nt
                    bet = bt-dt
                 ELSE
@@ -510,8 +520,8 @@ PROGRAM mkmod
                    net = et + (nt-et)/2.
                    bet = 0.
                 ENDIF
-
-                !PRINT*, bdt, net, bet
+            
+                !PRINT*, bdt, net, bet 
                 summ = bdt + net + bet
                 !summ = sum(bdt + net + bet)
                 IF (summ > 0.) THEN
@@ -528,29 +538,29 @@ PROGRAM mkmod
                 IF (lc == 1) THEN
                    net = max(tree_cover*0.8, net)
                    summ= bdt + bet
-
+                
                    IF (summ > 0.) THEN
                       bdt = (tree_cover-net)*bdt/summ
                       bet = (tree_cover-net)*bet/summ
                    ENDIF
                 ENDIF
-
+             
                 ! dominated by bet
                 IF (lc == 2) THEN
                    bet = max(tree_cover*0.8, bet)
                    summ= bdt + net
-
+               
                    IF (summ > 0.) THEN
                       bdt = (tree_cover-bet)*bdt/summ
                       net = (tree_cover-bet)*net/summ
                    ENDIF
                 ENDIF
-
+             
                 ! dpminated by bdt
                 IF (lc == 4) THEN
                    bdt = max(tree_cover*0.8, bdt)
                    summ= bet+net
-
+             
                    IF (summ > 0.) THEN
                       bet = (tree_cover-bdt)*bet/summ
                       net = (tree_cover-bdt)*net/summ
@@ -649,7 +659,7 @@ PROGRAM mkmod
                 ppft(j,i, 9+1) = sbe
                 ppft(j,i,10+1) = sbd
                 ppft(j,i,13+1) = ng
-
+             
              ELSE IF (kg < 29) THEN
                 ! boreal
                 sbd = sbd + sbe + sne
@@ -673,14 +683,14 @@ PROGRAM mkmod
           ELSE
              ppft(j,i,10:16) = 0.
           ENDIF
-
+          
           pctpft(:) = ppft(j,i,:)
           ! calculate LAI
           ! ------------------------
 
           ! covert 8-dau lai to monthly lai
           ! loop for each month
-          laitot = (/1.,2.,3.,4.,5.,6.,7.,8.,9.,10.,11.,12./)  !not define
+          laitot = (/1.,2.,3.,4.,5.,6.,7.,8.,9.,10.,11.,12./)  !not define 
 
           DO imonth=1,12,1
              IF (imonth==1 .or. imonth==4 .or. imonth==5 .or. imonth==10 .or. imonth==11) THEN
@@ -708,14 +718,14 @@ PROGRAM mkmod
              gdd5 (:)= 0.
              rgdd2(:)= 0.
              rgdd5(:)= 0.
-          ENDIF
+          ENDIF 
 
           DO WHILE (mcnt < 12)
-
+               
              imonth = mod((itmin+mcnt-1),12) + 1
 
              ! calculate gdd according to tmin, tmax, tavg, 2, 5degree
-             ! ------------------------------
+             ! ------------------------------ 
 
              ! calcualte day index of tavg
              IF ((tmax(imonth)-tmin(imonth)) > 0.) THEN
@@ -724,7 +734,7 @@ PROGRAM mkmod
              ELSE
                 davg = 0
              ENDIF
-
+ 
              ! gdd2 in different cases
              IF (2. < tmin(imonth)) THEN
                 dd2(imonth) = (tavg(imonth)-2.)* dom(imonth)
@@ -760,13 +770,13 @@ PROGRAM mkmod
                             (tmax(imonth)-tavg(imonth))*(dom(imonth)-davg)
              ELSE
                 dd5(imonth) = max(0., ((tavg(imonth)-5.)*dom(imonth)))
-             ENDIF
+             ENDIF 
 
              mcnt = mcnt + 1
           ENDDO
 
           ! split the tmin month gdd into 2 parts
-          ! gdd, rgdd
+          ! gdd, rgdd 
 
           IF (dd2(itmin) < 1e-6) THEN
              gdd2 (itmin) = 0.
@@ -776,7 +786,7 @@ PROGRAM mkmod
              prevmonth = mod((10+itmin),12) + 1
              summ      = max(0., (tmin(nextmonth)-2.)) + &
                          max(0., (tmin(prevmonth)-2.))
-
+             
              IF (summ > 0.) THEN
                 gdd2 (itmin) = dd2(itmin)*max(0., (tmin(nextmonth)-2.))/summ
                 rgdd2(itmin) = dd2(itmin)*max(0., (tmin(prevmonth)-2.))/summ
@@ -800,7 +810,7 @@ PROGRAM mkmod
              nextmonth = mod(itmin,12) + 1
              prevmonth = mod((itmin+10),12) + 1
              summ      = max(0., (tmin(nextmonth)-5.)) + &
-                         max(0., (tmin(prevmonth)-5.))
+                         max(0., (tmin(prevmonth)-5.)) 
 
              IF (summ > 0.) THEN
                 gdd5 (itmin) = dd5(itmin)*max(0., tmin(nextmonth)-5.)/summ
@@ -821,9 +831,9 @@ PROGRAM mkmod
           imonth_prev = itmin
           mcnt        = 1
           DO WHILE (mcnt < 12)
-
+             
              imonth = mod((itmin+mcnt-1),12) + 1
-
+             
              gdd2(imonth) = gdd2(imonth_prev) + dd2(imonth)
              gdd5(imonth) = gdd5(imonth_prev) + dd5(imonth)
 
@@ -853,7 +863,7 @@ PROGRAM mkmod
           !!!!!!
           DO imonth=1,12,1
              gdd2(imonth)   = min(gdd2(imonth), rgdd2(imonth))
-             gdd5(imonth)   = min(gdd5(imonth), rgdd5(imonth))
+             gdd5(imonth)   = min(gdd5(imonth), rgdd5(imonth)) 
 
              phi (4,imonth) = max(phimin(imonth), &
                                   min(1., gdd2(imonth)/sgdd(4)))
@@ -874,7 +884,7 @@ PROGRAM mkmod
              phi (16,imonth)= max(phimin(imonth), &
                                   min(1., gdd5(imonth)/sgdd(16)))
           ENDDO
-
+         
           ! distribution LAI
           ! sum(lai*PFT%) = MODIS_LAI
 
@@ -884,7 +894,7 @@ PROGRAM mkmod
 
           DO imonth=1,12,1
              sumwgt = sum(phi(:,imonth)*laimax(:)*pctpft(:))
-
+            
              IF (sumwgt > 0.) THEN
                 laiini(:,imonth) = phi(:,imonth)*laimax(:)/sumwgt*laitot(imonth)
              ELSE
@@ -900,7 +910,7 @@ PROGRAM mkmod
           laiinimax(:) = laiini(:,laimaxloc)
 
           DO imonth=1,12,1
-
+            
              ! evergreen tree phenology (Zeng et al., 2002)
              ! minimum fraction of maximum initial PFT LAI
              ! laiini[,imonth] = pmax(laiini[,imonth], laiinimax*minfr)
@@ -918,7 +928,7 @@ PROGRAM mkmod
              laitot_nonevg = max(laitot(imonth)-sumevg, 0.)
 
              !indx2  = (/4,7,8,9,11,12,13,14,15,16/)
-
+             
              sumnon = sum(phi(indx2(:),imonth)*laimax(indx2(:))*pctpft(indx2(:)))
              IF (sumnon > 0.) THEN
                 DO inx=1,10
@@ -988,7 +998,7 @@ PROGRAM mkmod
              inx = iloop+1
              laidiff(:,inx) = laiini(:,iloop) - laiini(:,inx)
           ENDDO
-
+          
           WHERE(laidiff<0.) laidiff=0.
 
           iloop = 1
@@ -1068,7 +1078,7 @@ PROGRAM mkmod
           ! output data
           pftlai(j,i,:,:) = laiini(:,:)
           pftsai(j,i,:,:) = saiini(:,:)
-
+          
           DO iloop=1,12
              laiini1(:,iloop) = pctpft(:)*laiini(:,iloop)
              saiini2(:,iloop) = pctpft(:)*saiini(:,iloop)
@@ -1082,7 +1092,7 @@ PROGRAM mkmod
              !PRINT*, 'LAI not conserved, set it to laitot'
              !PRINT*, laitot
              !PRINT*, lclai(j,i,:)
-
+            
              lclai(j,i,:) = laitot(:)
              IF (abs(sum(pctpft)-1.) > 1e-5) THEN
                 PRINT*, 'check'
@@ -1093,7 +1103,7 @@ PROGRAM mkmod
     ENDDO
 
     dll = (reg(4)-reg(2))*1./(xydim*1.)
-
+    
     DO dims=1,xydim
        lons(dims) = reg(2) + dims*dll - dll/2
        lats(dims) = reg(1) - dims*dll + dll/2
@@ -1132,10 +1142,10 @@ PROGRAM mkmod
     ! land cover data
 
     XY2D = (/lon_dimid, lat_dimid/)
-    XY3D = (/lon_dimid, lat_dimid, mon_dimid/)
+    XY3D = (/lon_dimid, lat_dimid, mon_dimid/) 
     XY3F = (/lon_dimid, lat_dimid, pft_dimid/)
     XY4D = (/lon_dimid, lat_dimid, pft_dimid, mon_dimid/)
-
+ 
     CALL check( nf90_def_var(ncid, "LC" , NF90_SHORT  , XY2D, lc_id, deflate_level=6) )
     CALL check( nf90_put_att(ncid, lc_id, "long_name" , "MODIS Land Cover Type (LC_Type1) data product, MCD12Q1 V006") )
     CALL check( nf90_put_att(ncid, lc_id, "_FillValue", fillvalue_short ) )

@@ -182,6 +182,8 @@ for (ireg in 1:dim(reg)[1]) {
   pice    [,]   = 0.
   pwater  [,]   = 0.
   pocean  [,]   = 0.
+  # yuan, 2/26/2022: not initialized
+  htop500 [,]   = 0.
   ppft    [,,]  = 0.
 
   cat("\n")

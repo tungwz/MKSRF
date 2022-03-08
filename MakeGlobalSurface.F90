@@ -5,6 +5,7 @@
 !
 ! History:
 !   2019/06: Hua Yuan, initial version
+!   2022/03: Hua Yuan, simplify PC aggregation (Mark 03/05/2022)
 ! ======================================================
 
 PROGRAM MakeSurface
@@ -57,19 +58,18 @@ PROGRAM MakeSurface
    REAL(r8), dimension(:,:)      , allocatable :: pct_glacier
    REAL(r8), dimension(:,:)      , allocatable :: pct_water
    REAL(r8), dimension(:,:,:)    , allocatable :: pct_lc
-   REAL(r8), dimension(:,:,:)    , allocatable :: pct_elc
    REAL(r8), dimension(:,:,:)    , allocatable :: pct_pft
    REAL(r8), dimension(:,:,:)    , allocatable :: htop_lc
    REAL(r8), dimension(:,:,:)    , allocatable :: htop_pft
-   REAL(r8), dimension(:,:,:,:)  , allocatable :: pct_epft
+   REAL(r8), dimension(:,:,:,:)  , allocatable :: pct_pc
    REAL(r8), dimension(:,:,:)    , allocatable :: lai_grid
    REAL(r8), dimension(:,:,:)    , allocatable :: sai_grid
    REAL(r8), dimension(:,:,:,:)  , allocatable :: lai_lc
    REAL(r8), dimension(:,:,:,:)  , allocatable :: sai_lc
    REAL(r8), dimension(:,:,:,:)  , allocatable :: lai_pft
    REAL(r8), dimension(:,:,:,:)  , allocatable :: sai_pft
-   REAL(r8), dimension(:,:,:,:,:), allocatable :: lai_epft
-   REAL(r8), dimension(:,:,:,:,:), allocatable :: sai_epft
+   REAL(r8), dimension(:,:,:,:,:), allocatable :: lai_pc
+   REAL(r8), dimension(:,:,:,:,:), allocatable :: sai_pc
 
    ! define other variables
    ! -----------------------------------------------
@@ -88,10 +88,10 @@ PROGRAM MakeSurface
 
    ! output variables/ids
    INTEGER :: varea, vpct_land, vlai_grid, vsai_grid
-   INTEGER :: vlai_lc, vsai_lc, vpct_lc, vpct_elc, vhtop_lc
+   INTEGER :: vlai_lc, vsai_lc, vpct_lc, vhtop_lc
    INTEGER :: vpct_pft, vlai_pft, vsai_pft, vhtop_pft
    INTEGER :: vpct_urban, vpct_crop, vpct_wetland, vpct_glacier, vpct_water
-   INTEGER :: vpct_epft, vlai_epft, vsai_epft
+   INTEGER :: vpct_pc, vlai_pc, vsai_pc
    INTEGER :: months(nmon), pfts(npft), lcs(22)
 
    REAL(r8) :: pi, deg2rad, re, dx, dy, sumarea, wgt, sumpct
@@ -99,14 +99,14 @@ PROGRAM MakeSurface
    REAL(r8) :: dll, lone(nxy), lonw(nxy), latn(nxy), lats(nxy)
    REAL(r8) :: lone1(nxy1), lonw1(nxy1), latn1(nxy1), lats1(nxy1), lons1(nxy1)
    REAL(r8) :: latso(nyo), lonso(nxo)
-   REAL(r8) :: glai_lc, glai_pft, glai_epft, gsai_lc, gsai_pft, gsai_epft
+   REAL(r8) :: glai_lc, glai_pft, glai_pc, gsai_lc, gsai_pft, gsai_pc
 
    INTEGER :: nlc
    INTEGER :: lc, ip, il, im
    INTEGER :: i, j, k, i1, j1, io, jo
    INTEGER :: URBAN, WETLAND, CROP, WATER, GLACIER
 
-   INTEGER :: XY2D(2), GRID3d(3), LC3D(3), PFT3D(3), LC4D(4), PFT4D(4), ePFT4D(4), ePFT5D(5)
+   INTEGER :: XY2D(2), GRID3d(3), LC3D(3), PFT3D(3), LC4D(4), PFT4D(4), PC4D(4), PC5D(5)
    INTEGER :: argn
 
    pi = 4.*atan(1.)
@@ -136,18 +136,18 @@ PROGRAM MakeSurface
    ENDIF
 
    ! allocate memory
-   allocate( lcdata  (nxy, nxy) )
-   allocate( purban  (nxy, nxy) )
-   allocate( pcrop   (nxy, nxy) )
-   allocate( pwetland(nxy, nxy) )
-   allocate( pglacier(nxy, nxy) )
-   allocate( pwater  (nxy, nxy) )
-   allocate( htop    (nxy, nxy) )
-   allocate( ppft    (nxy, nxy, npft) )
-   allocate( lclai   (nxy, nxy, nmon) )
-   allocate( lcsai   (nxy, nxy, nmon) )
-   allocate( pftlai  (nxy, nxy, npft, nmon) )
-   allocate( pftsai  (nxy, nxy, npft, nmon) )
+   allocate( lcdata       (nxy, nxy) )
+   allocate( purban       (nxy, nxy) )
+   allocate( pcrop        (nxy, nxy) )
+   allocate( pwetland     (nxy, nxy) )
+   allocate( pglacier     (nxy, nxy) )
+   allocate( pwater       (nxy, nxy) )
+   allocate( htop         (nxy, nxy) )
+   allocate( ppft         (nxy, nxy, npft) )
+   allocate( lclai        (nxy, nxy, nmon) )
+   allocate( lcsai        (nxy, nxy, nmon) )
+   allocate( pftlai       (nxy, nxy, npft, nmon) )
+   allocate( pftsai       (nxy, nxy, npft, nmon) )
    allocate( area         (nxo, nyo) )
    allocate( pct_land     (nxo, nyo) )
    allocate( pct_urban    (nxo, nyo) )
@@ -156,19 +156,18 @@ PROGRAM MakeSurface
    allocate( pct_glacier  (nxo, nyo) )
    allocate( pct_water    (nxo, nyo) )
    allocate( pct_lc       (nxo, nyo, nlc) )
-   allocate( pct_elc      (nxo, nyo, nlc) )
    allocate( htop_lc      (nxo, nyo, nlc) )
    allocate( pct_pft      (nxo, nyo, npft) )
    allocate( htop_pft     (nxo, nyo, npft) )
-   allocate( pct_epft     (nxo, nyo, npft, nlc) )
+   allocate( pct_pc       (nxo, nyo, npft, nlc) )
    allocate( lai_grid     (nxo, nyo, nmon) )
    allocate( sai_grid     (nxo, nyo, nmon) )
    allocate( lai_lc       (nxo, nyo, nlc, nmon) )
    allocate( sai_lc       (nxo, nyo, nlc, nmon) )
    allocate( lai_pft      (nxo, nyo, npft, nmon) )
    allocate( sai_pft      (nxo, nyo, npft, nmon) )
-   allocate( lai_epft     (nxo, nyo, npft, nlc, nmon) )
-   allocate( sai_epft     (nxo, nyo, npft, nlc, nmon) )
+   allocate( lai_pc       (nxo, nyo, npft, nlc, nmon) )
+   allocate( sai_pc       (nxo, nyo, npft, nlc, nmon) )
 
    DO i = 1, 22
       lcs(i) = i
@@ -183,27 +182,26 @@ PROGRAM MakeSurface
    ENDDO
 
    ! initialization
-   pct_land(:,:)       = 0.
-   pct_lc(:,:,:)       = 0.
-   pct_elc(:,:,:)      = 0.
-   lai_grid(:,:,:)     = 0.
-   sai_grid(:,:,:)     = 0.
-   lai_lc(:,:,:,:)     = 0.
-   sai_lc(:,:,:,:)     = 0.
-   htop_lc(:,:,:)      = 0.
-   lai_pft(:,:,:,:)    = 0.
-   sai_pft(:,:,:,:)    = 0.
-   pct_pft(:,:,:)      = 0.
-   pct_crop(:,:)       = 0.
-   pct_glacier(:,:)    = 0.
-   pct_water(:,:)      = 0.
-   pct_urban(:,:)      = 0.
-   pct_wetland(:,:)    = 0.
-   htop_pft(:,:,:)     = 0.
-   lai_epft(:,:,:,:,:) = 0.
-   sai_epft(:,:,:,:,:) = 0.
-   pct_epft(:,:,:,:)   = 0.
-   area(:,:)           = 0.
+   pct_land    (:,:) = 0.
+   pct_lc    (:,:,:) = 0.
+   lai_grid  (:,:,:) = 0.
+   sai_grid  (:,:,:) = 0.
+   lai_lc  (:,:,:,:) = 0.
+   sai_lc  (:,:,:,:) = 0.
+   htop_lc   (:,:,:) = 0.
+   lai_pft (:,:,:,:) = 0.
+   sai_pft (:,:,:,:) = 0.
+   pct_pft   (:,:,:) = 0.
+   pct_crop    (:,:) = 0.
+   pct_glacier (:,:) = 0.
+   pct_water   (:,:) = 0.
+   pct_urban   (:,:) = 0.
+   pct_wetland (:,:) = 0.
+   htop_pft  (:,:,:) = 0.
+   lai_pc(:,:,:,:,:) = 0.
+   sai_pc(:,:,:,:,:) = 0.
+   pct_pc  (:,:,:,:) = 0.
+   area        (:,:) = 0.
 
    ! get args from command line
    argn = IARGC()
@@ -219,7 +217,7 @@ PROGRAM MakeSurface
       read(11, *, iostat=iostatus) reg
 
       IF (iostatus /= 0) THEN
-         exit
+         EXIT
       ENDIF
 
       ! get region file name and open nc file
@@ -270,15 +268,15 @@ PROGRAM MakeSurface
       CALL check( nf90_close(ncid) )
 
       ! pre-process of raw data
-      pcrop(:,:)    = pcrop(:,:)/100.
-      purban(:,:)   = purban(:,:)/100.
+      pcrop   (:,:) = pcrop   (:,:)/100.
+      purban  (:,:) = purban  (:,:)/100.
       pwetland(:,:) = pwetland(:,:)/100.
       pglacier(:,:) = pglacier(:,:)/100.
-      pwater(:,:)   = pwater(:,:)/100.
-      ppft(:,:,:)   = ppft(:,:,:)/100.
+      pwater  (:,:) = pwater  (:,:)/100.
+      ppft  (:,:,:) = ppft  (:,:,:)/100.
 
       ! calculate the edge of small grids
-      dll   = (reg(4)-reg(2))*1./nxy  ! INTEGER to REAL
+      dll = (reg(4)-reg(2))*1./nxy  ! INTEGER to REAL
       DO i = 1, nxy
          lonw(i) = reg(2) + i*dll - dll
          lone(i) = reg(2) + i*dll
@@ -294,7 +292,7 @@ PROGRAM MakeSurface
       ENDDO
 
       ! output grid edge
-      dll   = (reg(4)-reg(2))*1./nxy1  ! INTEGER to REAL
+      dll = (reg(4)-reg(2))*1./nxy1  ! INTEGER to REAL
       DO i = 1, nxy1
          lonw1(i) = reg(2) + i*dll - dll
          lone1(i) = reg(2) + i*dll
@@ -305,7 +303,7 @@ PROGRAM MakeSurface
       ! loop for output grids
 !$OMP PARALLEL DO NUM_THREADS(92) &
 !$OMP PRIVATE(k,i1,j1,io,jo,dx,dy,sumarea,i,j,lc,wgt,sumpct,ip,il,im) &
-!$OMP PRIVATE(glai_lc,glai_pft,glai_epft,gsai_lc,gsai_pft,gsai_epft)
+!$OMP PRIVATE(glai_lc,glai_pft,glai_pc,gsai_lc,gsai_pft,gsai_pc)
       DO k = 1, nxy1*nxy1
 
          ! calculate i1, j1
@@ -346,8 +344,20 @@ PROGRAM MakeSurface
                   sai_lc (jo,io,lc,:) = sai_lc (jo,io,lc,:) + sarea(j,i)*lcsai(j,i,:)
                   htop_lc(jo,io,lc)   = htop_lc(jo,io,lc)   + sarea(j,i)* htop(j,i)
 
-                  ! 隐含的假设: 水体、冰川、城市、湿地和作物是由专业化的数据或高分辨率数据获得
-                  ! 下面的的代码具有兼容性，但目前并没有进行如上更新
+                  ! aggregate on pc level
+! yuan, 03/05/2022: a simple way to aggregate PC
+                  DO ip = 1, npft
+                     pct_pc(jo,io,ip,lc) = pct_pc(jo,io,ip,lc) + &
+                        sarea(j,i)*ppft(j,i,ip)
+                     lai_pc(jo,io,ip,lc,:) = lai_pc(jo,io,ip,lc,:) + &
+                        sarea(j,i)*ppft(j,i,ip)*pftlai(j,i,ip,:)
+                     sai_pc(jo,io,ip,lc,:) = sai_pc(jo,io,ip,lc,:) + &
+                        sarea(j,i)*ppft(j,i,ip)*pftsai(j,i,ip,:)
+                  ENDDO
+
+                  ! aggregate on PFT level
+                  ! 隐含的假设: 水体、冰川、城市、湿地和作物可由专业化的数据或高分辨率数据获得
+                  ! 下面的代码具有兼容性，但目前并没有进行如上更新
                   ! exclude water, ice, urban, wetland, and crop
                   wgt = max(0., 1.-pwater(j,i)-pglacier(j,i)-purban(j,i)-pwetland(j,i)-pcrop(j,i))
 
@@ -377,126 +387,6 @@ PROGRAM MakeSurface
                      sarea(j,i)*ppft(j,i,npft)*pftlai(j,i,npft,:)
                   sai_pft(jo,io,npft,:) = sai_pft(jo,io,npft,:) + &
                      sarea(j,i)*ppft(j,i,npft)*pftsai(j,i,npft,:)
-
-                  DO ip = 1, npft-1
-                     ! aggregate on ePFT level
-                     pct_epft(jo,io,ip,lc) = pct_epft(jo,io,ip,lc) + &
-                        sarea(j,i)*wgt*ppft(j,i,ip)
-
-                     ! ePFT level
-                     lai_epft(jo,io,ip,lc,:) = lai_epft(jo,io,ip,lc,:) + &
-                        sarea(j,i)*wgt*ppft(j,i,ip)*pftlai(j,i,ip,:)
-
-                     sai_epft(jo,io,ip,lc,:) = sai_epft(jo,io,ip,lc,:) + &
-                        sarea(j,i)*wgt*ppft(j,i,ip)*pftsai(j,i,ip,:)
-                  ENDDO
-
-                  ! aggregate on ePFT level for crop
-                  ! NOTE: no *wgt
-                  pct_epft(jo,io,npft,lc) = pct_epft(jo,io,npft,lc) + &
-                     sarea(j,i)*ppft(j,i,npft)
-
-                  lai_epft(jo,io,npft,lc,:) = lai_epft(jo,io,npft,lc,:) + &
-                     sarea(j,i)*ppft(j,i,npft)*pftlai(j,i,npft,:)
-
-                  sai_epft(jo,io,npft,lc,:) = sai_epft(jo,io,npft,lc,:) + &
-                     sarea(j,i)*ppft(j,i,npft)*pftsai(j,i,npft,:)
-
-                  ! aggregate for eLC, first for ONLY vegetated part
-                  pct_elc(jo,io,lc) = pct_elc(jo,io,lc) + sarea(j,i)*wgt
-                  pct_elc(jo,io,lc) = pct_elc(jo,io,lc) + sarea(j,i)*pcrop(j,i)
-
-                  ! aggregate urban/wetland/crop/ice/water at lc level
-                  ! ePFT - extended PFT
-                  ! 下面做法（已注释）：把非植被分别归类到各自的LC中
-                  ! 优点：更符合实际情况，地表组成
-                  ! 不足：内存增加，计算量增加，土壤不好表达
-                  !       植被PFT只需一个土壤(同一LC)，非植被各自
-                  !       都需要土壤存储
-                  ! 如何LC只保留非植被和植被中一种，即把植被中的非植被
-                  !
-                  ! 聚合到相应的非植被LC里
-                  ! 优点：节省内存，土壤column更容易表达(每一个LC就1个土壤，
-                  !       若打开crop模块，则两个土壤，若把crop也进行归类，
-                  !       则只需要一个土壤column)
-                  !pct_epft(jo,io,17,lc) = pct_epft(jo,io,17,lc) + &
-                  !   sarea(j,i)*purban(j,i)
-                  !pct_epft(jo,io,18,lc) = pct_epft(jo,io,18,lc) + &
-                  !   sarea(j,i)*pwetland(j,i)
-                  !pct_epft(jo,io,19,lc) = pct_epft(jo,io,19,lc) + &
-                  !   sarea(j,i)*pcrop(j,i)
-                  !pct_epft(jo,io,20,lc) = pct_epft(jo,io,20,lc) + &
-                  !   sarea(j,i)*pglacier(j,i)
-                  !pct_epft(jo,io,21,lc) = pct_epft(jo,io,21,lc) + &
-                  !   sarea(j,i)*pwater(j,i)
-
-                  ! 以下假设城市和湿地包含植被PC
-                  IF (DATASRC=="MOD") THEN
-
-                     ! 城市植被PC及LAI/SAI的赋值
-                     IF (purban(j,i) > 0.) THEN
-                        pct_elc(jo,io,URBAN) = pct_elc(jo,io,URBAN) + sarea(j,i)*purban(j,i)
-
-                        pct_epft(jo,io,1:(npft-1),URBAN) = pct_epft(jo,io,1:(npft-1),URBAN) + &
-                           sarea(j,i)*ppft(j,i,1:(npft-1))*purban(j,i)
-
-                        DO im = 1, nmon
-                           lai_epft(jo,io,1:(npft-1),URBAN,im) = lai_epft(jo,io,1:(npft-1),URBAN,im) + &
-                              sarea(j,i)*ppft(j,i,1:(npft-1))*purban(j,i)*pftlai(j,i,1:(npft-1),im)
-                           sai_epft(jo,io,1:(npft-1),URBAN,im) = sai_epft(jo,io,1:(npft-1),URBAN,im) + &
-                              sarea(j,i)*ppft(j,i,1:(npft-1))*purban(j,i)*pftsai(j,i,1:(npft-1),im)
-                        ENDDO
-                     ENDIF
-
-                     ! 湿地植被PC及LAI/SAI的赋值
-                     IF (pwetland(j,i) > 0.) THEN
-                        pct_elc(jo,io,WETLAND) = pct_elc(jo,io,WETLAND) + sarea(j,i)*pwetland(j,i)
-
-                        pct_epft(jo,io,1:(npft-1),WETLAND) = pct_epft(jo,io,1:(npft-1),WETLAND) + &
-                           sarea(j,i)*ppft(j,i,1:(npft-1))*pwetland(j,i)
-
-                        DO im = 1, nmon
-                           lai_epft(jo,io,1:(npft-1),WETLAND,im) = lai_epft(jo,io,1:(npft-1),WETLAND,im) + &
-                              sarea(j,i)*ppft(j,i,1:(npft-1))*pwetland(j,i)*pftlai(j,i,1:(npft-1),im)
-                           sai_epft(jo,io,1:(npft-1),WETLAND,im) = sai_epft(jo,io,1:(npft-1),WETLAND,im) + &
-                              sarea(j,i)*ppft(j,i,1:(npft-1))*pwetland(j,i)*pftsai(j,i,1:(npft-1),im)
-                        ENDDO
-                     ENDIF
-
-                     IF (pglacier(j,i) > 0.) THEN
-                        pct_elc(jo,io,GLACIER) = pct_elc(jo,io,GLACIER) + sarea(j,i)*pglacier(j,i)
-                     ENDIF
-
-                     IF (pwater(j,i) > 0.) THEN
-                        pct_elc(jo,io,WATER) = pct_elc(jo,io,WATER) + sarea(j,i)*pwater(j,i)
-                     ENDIF
-                  ENDIF
-
-                  IF (DATASRC=="ESA") THEN
-                     IF (purban(j,i) > 0.) THEN
-
-                        pct_elc(jo,io,URBAN) = pct_elc(jo,io,URBAN) + sarea(j,i)*purban(j,i)
-
-                        pct_epft(jo,io,1:(npft-1),URBAN) = pct_epft(jo,io,1:(npft-1),URBAN) + &
-                           sarea(j,i)*ppft(j,i,1:(npft-1))*purban(j,i)
-
-                        DO im = 1, nmon
-                           lai_epft(jo,io,1:(npft-1),URBAN,im) = lai_epft(jo,io,1:(npft-1),URBAN,im) + &
-                              sarea(j,i)*ppft(j,i,1:(npft-1))*purban(j,i)*pftlai(j,i,1:(npft-1),im)
-                           sai_epft(jo,io,1:(npft-1),URBAN,im) = sai_epft(jo,io,1:(npft-1),URBAN,im) + &
-                              sarea(j,i)*ppft(j,i,1:(npft-1))*purban(j,i)*pftsai(j,i,1:(npft-1),im)
-                        ENDDO
-                     ENDIF
-
-                     IF (pglacier(j,i) > 0.) THEN
-                        pct_elc(jo,io,GLACIER) = pct_elc(jo,io,GLACIER) + sarea(j,i)*pglacier(j,i)
-                     ENDIF
-
-                     IF (pwater(j,i) > 0.) THEN
-                        pct_elc(jo,io,WATER) = pct_elc(jo,io,WATER) + sarea(j,i)*pwater(j,i)
-                     ENDIF
-                  ENDIF
-
                ENDIF
             ENDDO
          ENDDO
@@ -523,12 +413,12 @@ PROGRAM MakeSurface
             ENDIF
          ENDDO
 
-         ! ePFT level
+         ! PC level
          DO il = 1, nlc
             DO ip = 1, npft
-               IF (pct_epft(jo,io,ip,il) > 0)  THEN
-                  lai_epft(jo,io,ip,il,:) = lai_epft(jo,io,ip,il,:)/pct_epft(jo,io,ip,il)
-                  sai_epft(jo,io,ip,il,:) = sai_epft(jo,io,ip,il,:)/pct_epft(jo,io,ip,il)
+               IF (pct_pc(jo,io,ip,il) > 0)  THEN
+                  lai_pc(jo,io,ip,il,:) = lai_pc(jo,io,ip,il,:)/pct_pc(jo,io,ip,il)
+                  sai_pc(jo,io,ip,il,:) = sai_pc(jo,io,ip,il,:)/pct_pc(jo,io,ip,il)
                ENDIF
             ENDDO
          ENDDO
@@ -536,10 +426,10 @@ PROGRAM MakeSurface
          ! calculate fractional cover
          ! ----------------------------------
 
-         ! ePFT level
+         ! PC level
          DO il = 1, nlc
-            IF (pct_elc(jo,io,il) > 0) THEN
-               pct_epft(jo,io,:,il) = pct_epft(jo,io,:,il)/pct_elc(jo,io,il) * 100.
+            IF (pct_lc(jo,io,il) > 0) THEN
+               pct_pc(jo,io,:,il) = pct_pc(jo,io,:,il)/pct_lc(jo,io,il) * 100.
             ENDIF
          ENDDO
 
@@ -554,11 +444,10 @@ PROGRAM MakeSurface
 
             ! LC level
             pct_lc (jo,io,:) = pct_lc (jo,io,:) / pct_land(jo,io) * 100.
-            pct_elc(jo,io,:) = pct_elc(jo,io,:) / pct_land(jo,io) * 100.
          ENDIF
 
          IF (abs(sumarea-area(jo,io))/sumarea > 1e-5) THEN
-            print *, "Calculate area error! stop!"
+            print *, "Calculate area error! STOP!"
          ENDIF
 
          ! land fractional cover
@@ -572,43 +461,35 @@ PROGRAM MakeSurface
             print *, sumpct
             print *, pct_pft(jo,io,:)
             print *, sum(pct_pft(jo,io,:))
-            print *, "Sum of pct_pft+urban+wetland+glacier+crop+water not equal 1! stop!"
+            print *, "Sum of pct_pft+urban+wetland+glacier+crop+water not equal 1! STOP!"
          ENDIF
 
          sumpct = sum(pct_lc(jo,io,:))
          IF (sumpct > 1e-6 .and. abs(sumpct-100) > 1e-3) THEN
             print *, sumpct
-            print *, "Sum of pct_lc not equal 1! stop!"
-         ENDIF
-
-         sumpct = sum(pct_elc(jo,io,:))
-         IF (sumpct > 1e-6 .and. abs(sumpct-100) > 1e-3) THEN
-            print *, sumpct
-            print *, pct_elc(jo,io,:)
-            print *, sum(pct_elc(jo,io,:))
-            print *, "Sum of pct_elc not equal 1! stop!"
+            print *, "Sum of pct_lc not equal 1! STOP!"
          ENDIF
 
          DO il = 1, nlc
             IF (DATASRC=="MOD" .and. (il==WATER .or. il==GLACIER .or. il==URBAN .or. il==WETLAND)) THEN
-               cycle
+               CYCLE
             ENDIF
             IF (DATASRC=="ESA" .and. (il==WATER .or. il==GLACIER .or. il==URBAN)) THEN
-               cycle
+               CYCLE
             ENDIF
-            sumpct = sum(pct_epft(jo,io,:,il))
+            sumpct = sum(pct_pc(jo,io,:,il))
             IF (sumpct > 1e-6 .and. abs(sumpct-100) > 1e-3) THEN
                print *, sumpct
-               print *, "Sum of pct_epft not equal 1! stop!"
+               print *, "Sum of pct_pc not equal 1! STOP!"
             ENDIF
          ENDDO
 
          ! make LAI/SAI conserved to the LC LAI/SAI
          DO im = 1, nmon
 
-            ! initialize for grid lai from ePFT
-            glai_epft = 0.
-            gsai_epft = 0.
+            ! initialize for grid lai from pc
+            glai_pc = 0.
+            gsai_pc = 0.
 
             glai_lc   = sum(pct_lc(jo,io,:) * lai_lc(jo,io,:,im))
             gsai_lc   = sum(pct_lc(jo,io,:) * sai_lc(jo,io,:,im))
@@ -619,45 +500,45 @@ PROGRAM MakeSurface
 
             ! add LAI of urban and wetland
             IF (DATASRC=="MOD") THEN
-               glai_pft = glai_pft + pct_elc(jo,io,URBAN)  *sum(pct_epft(jo,io,:,URBAN)*lai_epft(jo,io,:,URBAN,im)/100.)
-               gsai_pft = gsai_pft + pct_elc(jo,io,URBAN)  *sum(pct_epft(jo,io,:,URBAN)*sai_epft(jo,io,:,URBAN,im)/100.)
-               glai_pft = glai_pft + pct_elc(jo,io,WETLAND)*sum(pct_epft(jo,io,:,WETLAND)*lai_epft(jo,io,:,WETLAND,im)/100.)
-               gsai_pft = gsai_pft + pct_elc(jo,io,WETLAND)*sum(pct_epft(jo,io,:,WETLAND)*sai_epft(jo,io,:,WETLAND,im)/100.)
+               glai_pft = glai_pft + pct_lc(jo,io,URBAN  )*sum(pct_pc(jo,io,:,URBAN  )*lai_pc(jo,io,:,URBAN  ,im)/100.)
+               gsai_pft = gsai_pft + pct_lc(jo,io,URBAN  )*sum(pct_pc(jo,io,:,URBAN  )*sai_pc(jo,io,:,URBAN  ,im)/100.)
+               glai_pft = glai_pft + pct_lc(jo,io,WETLAND)*sum(pct_pc(jo,io,:,WETLAND)*lai_pc(jo,io,:,WETLAND,im)/100.)
+               gsai_pft = gsai_pft + pct_lc(jo,io,WETLAND)*sum(pct_pc(jo,io,:,WETLAND)*sai_pc(jo,io,:,WETLAND,im)/100.)
             ENDIF
 
             ! add LAI of urban
             IF (DATASRC=="ESA") THEN
-               !glai_pft = glai_pft + sum(pct_epft(jo,io,:,URBAN)*lai_epft(jo,io,:,URBAN,im))
-               !gsai_pft = gsai_pft + sum(pct_epft(jo,io,:,URBAN)*sai_epft(jo,io,:,URBAN,im))
-               glai_pft = glai_pft + pct_elc(jo,io,URBAN)*sum(pct_epft(jo,io,:,URBAN)*lai_epft(jo,io,:,URBAN,im)/100.)
-               gsai_pft = gsai_pft + pct_elc(jo,io,URBAN)*sum(pct_epft(jo,io,:,URBAN)*sai_epft(jo,io,:,URBAN,im)/100.)
+               glai_pft = glai_pft + pct_lc(jo,io,URBAN)*sum(pct_pc(jo,io,:,URBAN)*lai_pc(jo,io,:,URBAN,im)/100.)
+               gsai_pft = gsai_pft + pct_lc(jo,io,URBAN)*sum(pct_pc(jo,io,:,URBAN)*sai_pc(jo,io,:,URBAN,im)/100.)
             ENDIF
 
 ! yuan, 01/05/2020: BUG!!!!
-! 把il写成nlc,没有考虑pct_elc%,需要除以100
+! 把il写成nlc,没有考虑pct_lc%,需要除以100
             DO il = 1, nlc
-               !glai_epft = glai_epft + sum(pct_epft(jo,io,:,il)*lai_epft(jo,io,:,il,im))
-               !gsai_epft = gsai_epft + sum(pct_epft(jo,io,:,il)*sai_epft(jo,io,:,il,im))
-               glai_epft = glai_epft + pct_elc(jo,io,il)*sum(pct_epft(jo,io,:,il)*lai_epft(jo,io,:,il,im)/100.)
-               gsai_epft = gsai_epft + pct_elc(jo,io,il)*sum(pct_epft(jo,io,:,il)*sai_epft(jo,io,:,il,im)/100.)
+               glai_pc = glai_pc + pct_lc(jo,io,il)*sum(pct_pc(jo,io,:,il)*lai_pc(jo,io,:,il,im)/100.)
+               gsai_pc = gsai_pc + pct_lc(jo,io,il)*sum(pct_pc(jo,io,:,il)*sai_pc(jo,io,:,il,im)/100.)
             ENDDO
 
             ! adjust PFT LAI/SAI
             IF (glai_pft > 0. .and. pct_land(jo,io)>1.) THEN
                lai_pft(jo,io,:,im) = lai_pft(jo,io,:,im) * min(2., glai_lc/glai_pft)
+               WHERE (lai_pft(jo,io,:,im) > 10.) lai_pft(jo,io,:,im) = 10.
             ENDIF
 
             IF (gsai_pft > 0. .and. pct_land(jo,io)>1.) THEN
                sai_pft(jo,io,:,im) = sai_pft(jo,io,:,im) * min(2., gsai_lc/gsai_pft)
+               WHERE (sai_pft(jo,io,:,im) > 3.) sai_pft(jo,io,:,im) = 3.
             ENDIF
 
-            ! adjust ePFT LAI
-            IF (glai_epft > 0. .and. pct_land(jo,io)>1.) THEN
-               lai_epft(jo,io,:,:,im) = lai_epft(jo,io,:,:,im) * min(2., glai_lc/glai_epft)
+            ! adjust pc LAI
+            IF (glai_pc > 0. .and. pct_land(jo,io)>1.) THEN
+               lai_pc(jo,io,:,:,im) = lai_pc(jo,io,:,:,im) * min(2., glai_lc/glai_pc)
+               WHERE (lai_pc(jo,io,:,:,im) > 10.) lai_pc(jo,io,:,:,im) = 10.
             ENDIF
 
-            IF (gsai_epft > 0. .and. pct_land(jo,io)>1.) THEN
-               sai_epft(jo,io,:,:,im) = sai_epft(jo,io,:,:,im) * min(2., gsai_lc/gsai_epft)
+            IF (gsai_pc > 0. .and. pct_land(jo,io)>1.) THEN
+               sai_pc(jo,io,:,:,im) = sai_pc(jo,io,:,:,im) * min(2., gsai_lc/gsai_pc)
+               WHERE (sai_pc(jo,io,:,:,im) > 3.) sai_pc(jo,io,:,:,im) = 3.
             ENDIF
 
          ENDDO
@@ -668,33 +549,33 @@ PROGRAM MakeSurface
    ENDDO
 
    ! create NC file
-   FILE_NAME = OUT_DIR//'global_0.5x0.5.'//DATASRC//trim(year)//"_V4.5.nc"
+   FILE_NAME = OUT_DIR//'global_0.5x0.5.'//DATASRC//trim(year)//"_V5.nc"
 
    CALL check( nf90_create(FILE_NAME, NF90_NETCDF4, ncid) )
 
    ! Define the dimensions.
-   CALL check( nf90_def_dim(ncid, "lat",  nyo , lat_dimid ) )
-   CALL check( nf90_def_dim(ncid, "lon",  nxo , lon_dimid ) )
-   CALL check( nf90_def_dim(ncid, "lc" ,  nlc , lc_dimid  ) )
-   CALL check( nf90_def_dim(ncid, "pft",  npft, pft_dimid ) )
-   CALL check( nf90_def_dim(ncid, "mon",  nmon, mon_dimid ) )
+   CALL check( nf90_def_dim(ncid, "lat",  nyo , lat_dimid) )
+   CALL check( nf90_def_dim(ncid, "lon",  nxo , lon_dimid) )
+   CALL check( nf90_def_dim(ncid, "lc" ,  nlc , lc_dimid ) )
+   CALL check( nf90_def_dim(ncid, "pft",  npft, pft_dimid) )
+   CALL check( nf90_def_dim(ncid, "mon",  nmon, mon_dimid) )
 
    ! Define the coordinate variables.
-   CALL check( nf90_def_var(ncid, "lat" , NF90_FLOAT, lat_dimid , lat_vid ) )
-   CALL check( nf90_def_var(ncid, "lon" , NF90_FLOAT, lon_dimid , lon_vid ) )
-   CALL check( nf90_def_var(ncid, "lc"  , NF90_INT  , lc_dimid  , lc_vid  ) )
-   CALL check( nf90_def_var(ncid, "pft" , NF90_INT  , pft_dimid , pft_vid ) )
-   CALL check( nf90_def_var(ncid, "mon" , NF90_INT  , mon_dimid , mon_vid ) )
+   CALL check( nf90_def_var(ncid, "lat" , NF90_FLOAT, lat_dimid , lat_vid) )
+   CALL check( nf90_def_var(ncid, "lon" , NF90_FLOAT, lon_dimid , lon_vid) )
+   CALL check( nf90_def_var(ncid, "lc"  , NF90_INT  , lc_dimid  , lc_vid ) )
+   CALL check( nf90_def_var(ncid, "pft" , NF90_INT  , pft_dimid , pft_vid) )
+   CALL check( nf90_def_var(ncid, "mon" , NF90_INT  , mon_dimid , mon_vid) )
 
    ! Assign units attributes to coordinate variables.
-   CALL check( nf90_put_att(ncid, lat_vid , "long_name", "Latitude"          ))
-   CALL check( nf90_put_att(ncid, lat_vid , "units"    , "degrees_north"     ))
-   CALL check( nf90_put_att(ncid, lon_vid , "long_name", "Longitude"         ))
-   CALL check( nf90_put_att(ncid, lon_vid , "units"    , "degrees_east"      ))
-   CALL check( nf90_put_att(ncid, lc_vid  , "long_name", "LC index"          ))
-   CALL check( nf90_put_att(ncid, pft_vid , "long_name", "PFT index"         ))
-   CALL check( nf90_put_att(ncid, mon_vid , "long_name", "Month"             ))
-   CALL check( nf90_put_att(ncid, mon_vid , "units"    , "month"             ))
+   CALL check( nf90_put_att(ncid, lat_vid , "long_name", "Latitude"      ) )
+   CALL check( nf90_put_att(ncid, lat_vid , "units"    , "degrees_north" ) )
+   CALL check( nf90_put_att(ncid, lon_vid , "long_name", "Longitude"     ) )
+   CALL check( nf90_put_att(ncid, lon_vid , "units"    , "degrees_east"  ) )
+   CALL check( nf90_put_att(ncid, lc_vid  , "long_name", "LC index"      ) )
+   CALL check( nf90_put_att(ncid, pft_vid , "long_name", "PFT index"     ) )
+   CALL check( nf90_put_att(ncid, mon_vid , "long_name", "Month"         ) )
+   CALL check( nf90_put_att(ncid, mon_vid , "units"    , "month"         ) )
 
    ! define output variables
    XY2D = (/ lon_dimid, lat_dimid /)
@@ -709,26 +590,25 @@ PROGRAM MakeSurface
    LC3D   = (/ lon_dimid, lat_dimid, lc_dimid  /)
    GRID3D = (/ lon_dimid, lat_dimid, mon_dimid /)
    PFT3D  = (/ lon_dimid, lat_dimid, pft_dimid /)
-   CALL check( nf90_def_var(ncid, "PCT_LC"      , NF90_FLOAT, LC3D  , vpct_lc  , deflate_level=6 ) )
-   CALL check( nf90_def_var(ncid, "PCT_eLC"     , NF90_FLOAT, LC3D  , vpct_elc , deflate_level=6 ) )
-   CALL check( nf90_def_var(ncid, "HTOP_LC"     , NF90_FLOAT, LC3D  , vhtop_lc , deflate_level=6 ) )
-   CALL check( nf90_def_var(ncid, "PCT_PFT"     , NF90_FLOAT, PFT3D , vpct_pft , deflate_level=6 ) )
-   CALL check( nf90_def_var(ncid, "HTOP_PFT"    , NF90_FLOAT, PFT3D , vhtop_pft, deflate_level=6 ) )
-   CALL check( nf90_def_var(ncid, "MONTHLY_LAI" , NF90_FLOAT, GRID3D, vlai_grid, deflate_level=6 ) )
-   CALL check( nf90_def_var(ncid, "MONTHLY_SAI" , NF90_FLOAT, GRID3D, vsai_grid, deflate_level=6 ) )
+   CALL check( nf90_def_var(ncid, "PCT_LC"      , NF90_FLOAT, LC3D  , vpct_lc  , deflate_level=6) )
+   CALL check( nf90_def_var(ncid, "HTOP_LC"     , NF90_FLOAT, LC3D  , vhtop_lc , deflate_level=6) )
+   CALL check( nf90_def_var(ncid, "PCT_PFT"     , NF90_FLOAT, PFT3D , vpct_pft , deflate_level=6) )
+   CALL check( nf90_def_var(ncid, "HTOP_PFT"    , NF90_FLOAT, PFT3D , vhtop_pft, deflate_level=6) )
+   CALL check( nf90_def_var(ncid, "MONTHLY_LAI" , NF90_FLOAT, GRID3D, vlai_grid, deflate_level=6) )
+   CALL check( nf90_def_var(ncid, "MONTHLY_SAI" , NF90_FLOAT, GRID3D, vsai_grid, deflate_level=6) )
 
-   ePFT4D = (/ lon_dimid, lat_dimid, pft_dimid, lc_dimid  /)
-   LC4D   = (/ lon_dimid, lat_dimid, lc_dimid , mon_dimid /)
-   PFT4D  = (/ lon_dimid, lat_dimid, pft_dimid, mon_dimid /)
-   CALL check( nf90_def_var(ncid, "PCT_ePFT"       , NF90_FLOAT, ePFT4D, vpct_epft, deflate_level=6 ) )
-   CALL check( nf90_def_var(ncid, "MONTHLY_LC_LAI" , NF90_FLOAT, LC4D  , vlai_lc  , deflate_level=6 ) )
-   CALL check( nf90_def_var(ncid, "MONTHLY_LC_SAI" , NF90_FLOAT, LC4D  , vsai_lc  , deflate_level=6 ) )
-   CALL check( nf90_def_var(ncid, "MONTHLY_PFT_LAI", NF90_FLOAT, PFT4D , vlai_pft , deflate_level=6 ) )
-   CALL check( nf90_def_var(ncid, "MONTHLY_PFT_SAI", NF90_FLOAT, PFT4D , vsai_pft , deflate_level=6 ) )
+   PC4D  = (/ lon_dimid, lat_dimid, pft_dimid, lc_dimid  /)
+   LC4D  = (/ lon_dimid, lat_dimid, lc_dimid , mon_dimid /)
+   PFT4D = (/ lon_dimid, lat_dimid, pft_dimid, mon_dimid /)
+   CALL check( nf90_def_var(ncid, "PCT_PC"         , NF90_FLOAT, PC4D , vpct_pc , deflate_level=6) )
+   CALL check( nf90_def_var(ncid, "MONTHLY_LC_LAI" , NF90_FLOAT, LC4D , vlai_lc , deflate_level=6) )
+   CALL check( nf90_def_var(ncid, "MONTHLY_LC_SAI" , NF90_FLOAT, LC4D , vsai_lc , deflate_level=6) )
+   CALL check( nf90_def_var(ncid, "MONTHLY_PFT_LAI", NF90_FLOAT, PFT4D, vlai_pft, deflate_level=6) )
+   CALL check( nf90_def_var(ncid, "MONTHLY_PFT_SAI", NF90_FLOAT, PFT4D, vsai_pft, deflate_level=6) )
 
-   ePFT5D = (/ lon_dimid, lat_dimid, pft_dimid, lc_dimid, mon_dimid /)
-   CALL check( nf90_def_var(ncid, "MONTHLY_ePFT_LAI", NF90_FLOAT, ePFT5D, vlai_epft, deflate_level=6 ) )
-   CALL check( nf90_def_var(ncid, "MONTHLY_ePFT_SAI", NF90_FLOAT, ePFT5D, vsai_epft, deflate_level=6 ) )
+   PC5D = (/ lon_dimid, lat_dimid, pft_dimid, lc_dimid, mon_dimid /)
+   CALL check( nf90_def_var(ncid, "MONTHLY_PC_LAI", NF90_FLOAT, PC5D, vlai_pc, deflate_level=6) )
+   CALL check( nf90_def_var(ncid, "MONTHLY_PC_SAI", NF90_FLOAT, PC5D, vsai_pc, deflate_level=6) )
 
    ! Assign units attributes to the netCDF variables.
    CALL check( nf90_put_att(ncid, varea       , "units"    , "km^2"                    ) )
@@ -748,8 +628,6 @@ PROGRAM MakeSurface
 
    CALL check( nf90_put_att(ncid, vpct_lc  , "units"    , "%"                            ) )
    CALL check( nf90_put_att(ncid, vpct_lc  , "long_name", "Percent land cover type cover") )
-   CALL check( nf90_put_att(ncid, vpct_elc , "units"    , "%"                            ) )
-   CALL check( nf90_put_att(ncid, vpct_elc , "long_name", "Percent land cover type cover") )
    CALL check( nf90_put_att(ncid, vpct_pft , "units"    , "%"                            ) )
    CALL check( nf90_put_att(ncid, vpct_pft , "long_name", "Percent PFT cover"            ) )
    CALL check( nf90_put_att(ncid, vhtop_lc , "units"    , "m"                            ) )
@@ -757,32 +635,32 @@ PROGRAM MakeSurface
    CALL check( nf90_put_att(ncid, vhtop_pft, "units"    , "m"                            ) )
    CALL check( nf90_put_att(ncid, vhtop_pft, "long_name", "PFT tree top height"          ) )
 
-   CALL check( nf90_put_att(ncid, vpct_epft, "units"    , "%"                         ) )
-   CALL check( nf90_put_att(ncid, vpct_epft, "long_name", "Percent extended PFT cover") )
+   CALL check( nf90_put_att(ncid, vpct_pc, "units"    , "%"                         ) )
+   CALL check( nf90_put_att(ncid, vpct_pc, "long_name", "Percent extended PFT cover") )
 
-   CALL check( nf90_put_att(ncid, vlai_grid, "units"    , "m^2/m^2"                   ) )
-   CALL check( nf90_put_att(ncid, vlai_grid, "long_name", "Monthly GRID LAI values"   ) )
-   CALL check( nf90_put_att(ncid, vsai_grid, "units"    , "m^2/m^2"                   ) )
-   CALL check( nf90_put_att(ncid, vsai_grid, "long_name", "Monthly GRID SAI values"   ) )
+   CALL check( nf90_put_att(ncid, vlai_grid, "units"    , "m^2/m^2"                 ) )
+   CALL check( nf90_put_att(ncid, vlai_grid, "long_name", "Monthly GRID LAI values" ) )
+   CALL check( nf90_put_att(ncid, vsai_grid, "units"    , "m^2/m^2"                 ) )
+   CALL check( nf90_put_att(ncid, vsai_grid, "long_name", "Monthly GRID SAI values" ) )
 
-   CALL check( nf90_put_att(ncid, vlai_lc  , "units"    , "m^2/m^2"                   ) )
-   CALL check( nf90_put_att(ncid, vlai_lc  , "long_name", "Monthly LC LAI values"     ) )
-   CALL check( nf90_put_att(ncid, vsai_lc  , "units"    , "m^2/m^2"                   ) )
-   CALL check( nf90_put_att(ncid, vsai_lc  , "long_name", "Monthly LC SAI values"     ) )
-   CALL check( nf90_put_att(ncid, vlai_pft , "units"    , "m^2/m^2"                   ) )
-   CALL check( nf90_put_att(ncid, vlai_pft , "long_name", "Monthly PFT LAI values"    ) )
-   CALL check( nf90_put_att(ncid, vsai_pft , "units"    , "m^2/m^2"                   ) )
-   CALL check( nf90_put_att(ncid, vsai_pft , "long_name", "Monthly PFT SAI values"    ) )
+   CALL check( nf90_put_att(ncid, vlai_lc  , "units"    , "m^2/m^2"                 ) )
+   CALL check( nf90_put_att(ncid, vlai_lc  , "long_name", "Monthly LC LAI values"   ) )
+   CALL check( nf90_put_att(ncid, vsai_lc  , "units"    , "m^2/m^2"                 ) )
+   CALL check( nf90_put_att(ncid, vsai_lc  , "long_name", "Monthly LC SAI values"   ) )
+   CALL check( nf90_put_att(ncid, vlai_pft , "units"    , "m^2/m^2"                 ) )
+   CALL check( nf90_put_att(ncid, vlai_pft , "long_name", "Monthly PFT LAI values"  ) )
+   CALL check( nf90_put_att(ncid, vsai_pft , "units"    , "m^2/m^2"                 ) )
+   CALL check( nf90_put_att(ncid, vsai_pft , "long_name", "Monthly PFT SAI values"  ) )
 
-   CALL check( nf90_put_att(ncid, vlai_epft, "units"    , "m^2/m^2"                ) )
-   CALL check( nf90_put_att(ncid, vlai_epft, "long_name", "Monthly ePFT LAI values") )
-   CALL check( nf90_put_att(ncid, vsai_epft, "units"    , "m^2/m^2"                ) )
-   CALL check( nf90_put_att(ncid, vsai_epft, "long_name", "Monthly ePFT SAI values") )
+   CALL check( nf90_put_att(ncid, vlai_pc, "units"    , "m^2/m^2"              ) )
+   CALL check( nf90_put_att(ncid, vlai_pc, "long_name", "Monthly pc LAI values") )
+   CALL check( nf90_put_att(ncid, vsai_pc, "units"    , "m^2/m^2"              ) )
+   CALL check( nf90_put_att(ncid, vsai_pc, "long_name", "Monthly pc SAI values") )
 
-   CALL check( nf90_put_att(ncid, NF90_GLOBAL, 'Title'  , Title  ))
-   CALL check( nf90_put_att(ncid, NF90_GLOBAL, 'Authors', Authors))
-   CALL check( nf90_put_att(ncid, NF90_GLOBAL, 'Adderss', Address))
-   CALL check( nf90_put_att(ncid, NF90_GLOBAL, 'Email'  , Email  ))
+   CALL check( nf90_put_att(ncid, NF90_GLOBAL, 'Title'  , Title  ) )
+   CALL check( nf90_put_att(ncid, NF90_GLOBAL, 'Authors', Authors) )
+   CALL check( nf90_put_att(ncid, NF90_GLOBAL, 'Adderss', Address) )
+   CALL check( nf90_put_att(ncid, NF90_GLOBAL, 'Email'  , Email  ) )
 
    ! End define mode.
    CALL check( nf90_enddef(ncid) )
@@ -806,7 +684,6 @@ PROGRAM MakeSurface
    CALL check( nf90_put_var(ncid, varea       , area       ) )
    CALL check( nf90_put_var(ncid, vpct_land   , pct_land   ) )
    CALL check( nf90_put_var(ncid, vpct_lc     , pct_lc     ) )
-   CALL check( nf90_put_var(ncid, vpct_elc    , pct_elc    ) )
    CALL check( nf90_put_var(ncid, vlai_grid   , lai_grid   ) )
    CALL check( nf90_put_var(ncid, vsai_grid   , sai_grid   ) )
    CALL check( nf90_put_var(ncid, vlai_lc     , lai_lc     ) )
@@ -821,9 +698,9 @@ PROGRAM MakeSurface
    CALL check( nf90_put_var(ncid, vpct_glacier, pct_glacier) )
    CALL check( nf90_put_var(ncid, vpct_water  , pct_water  ) )
    CALL check( nf90_put_var(ncid, vhtop_pft   , htop_pft   ) )
-   CALL check( nf90_put_var(ncid, vpct_epft   , pct_epft   ) )
-   CALL check( nf90_put_var(ncid, vlai_epft   , lai_epft   ) )
-   CALL check( nf90_put_var(ncid, vsai_epft   , sai_epft   ) )
+   CALL check( nf90_put_var(ncid, vpct_pc     , pct_pc     ) )
+   CALL check( nf90_put_var(ncid, vlai_pc     , lai_pc     ) )
+   CALL check( nf90_put_var(ncid, vsai_pc     , sai_pc     ) )
 
    ! Close the file. This causes netCDF to flush all buffers and make
    ! sure your data are really written to disk.
@@ -852,19 +729,18 @@ PROGRAM MakeSurface
    deallocate( pct_glacier  )
    deallocate( pct_water    )
    deallocate( pct_lc       )
-   deallocate( pct_elc      )
    deallocate( htop_lc      )
    deallocate( pct_pft      )
    deallocate( htop_pft     )
-   deallocate( pct_epft     )
+   deallocate( pct_pc       )
    deallocate( lai_grid     )
    deallocate( sai_grid     )
    deallocate( lai_lc       )
    deallocate( sai_lc       )
    deallocate( lai_pft      )
    deallocate( sai_pft      )
-   deallocate( lai_epft     )
-   deallocate( sai_epft     )
+   deallocate( lai_pc       )
+   deallocate( sai_pc       )
 
 CONTAINS
 
@@ -873,7 +749,7 @@ CONTAINS
 
       IF (status /= nf90_noerr) THEN
          print *, trim(nf90_strerror(status))
-         stop 2
+         STOP 2
       ENDIF
    END SUBROUTINE check
 

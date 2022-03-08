@@ -87,8 +87,8 @@ for (i in 1:dim(reg)[1]) {
   latdim  <- ncdim_def("lat",  "degrees_north", as.single(lats),  longname="Latitude"     )
   londim1 <- ncdim_def("lon1", "degrees_east",  as.single(lons1), longname="Longitude"    )
   latdim1 <- ncdim_def("lat1", "degrees_north", as.single(lats1), longname="Latitude"     )
-  daydim  <- ncdim_def("day",  "8-day of year", as.integer(days), longname="8-day of year")
-  mondim  <- ncdim_def("mon",  "month of year", as.integer(mons), longname="month of year")
+  daydim  <- ncdim_def("day",  "day",           as.integer(days), longname="8-day of year")
+  mondim  <- ncdim_def("mon",  "month",         as.integer(mons), longname="month of year")
 
   # define variables
   # --------------------------------------------------

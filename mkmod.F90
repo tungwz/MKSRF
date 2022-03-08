@@ -387,11 +387,9 @@ PROGRAM mkmod
           ELSE IF (lc == 14) THEN
              pcrop(j,i) = 50.
           ELSE IF (lc == 15) THEN
-             pice (j,i) = 100.
-             CYCLE
+             pice (j,i) = 100.;  CYCLE
           ELSE IF (lc == 17) THEN
-             pwater(j,i) = 100.
-             CYCLE
+             pwater(j,i) = 100.; CYCLE
           ENDIF
 
           ! get additional data
@@ -993,7 +991,6 @@ PROGRAM mkmod
           saimin1(2:16)= saimin1(2:16)/laimax(2:16)
           saiini (:,:) = 0.
           saiini1(:,:) = saiini(:,:)
-
 
           DO iloop=1,12
              saiini1(:,iloop) = saimin(:)
